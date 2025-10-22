@@ -29,7 +29,7 @@ if(!require(lsr)){install.packages("lsr")}
 ```{r}
 #reading in csv files and cleaning
 
-Section_data_Pdgfra <- read.csv("DATA/Pdgfra/Imagedata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+Section_data_Pdgfra <- read.csv("DATA/Pdgfra/PdgfraImagedata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
 
 #adding column for Animal, Sex, GT, slice, hemisphere
 
@@ -49,11 +49,53 @@ Section_data_Pdgfra <- Section_data_Pdgfra %>%
 
 
 
-Detections_data_Pdgfra <- read.csv("DATA/Pdgfra/Celldata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+Detections_data_Pdgfra <- read.csv("DATA/Pdgfra/PdgfraCelldata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
 
 #adding column for Animal, Sex, GT, slice, hemisphere
 
 Detections_data_Pdgfra <- Detections_data_Pdgfra %>%
+  mutate(
+    Animal = str_extract(Image, "_\\d{6}_") %>%
+                str_replace_all("_", ""),
+    Sex = str_extract(Image, "_[FM]_") %>%
+             str_replace_all("_", ""),
+    Genotype = str_extract(Image, "_(WT|KO)_") %>% 
+      str_replace_all("_", ""),
+    Slice = str_extract(Image, "s\\d+") %>%
+      str_replace("s", ""),
+    Hemisphere = str_extract(Image, "h\\d+") %>%
+      str_replace("h", "")
+  )
+```
+
+```{r}
+#reading in csv files and cleaning
+
+Section_data_ASPA <- read.csv("DATA/ASPA/ASPAImagedata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+
+#adding column for Animal, Sex, GT, slice, hemisphere
+
+Section_data_ASPA <- Section_data_ASPA %>%
+  mutate(
+    Animal = str_extract(Image, "_\\d{6}_") %>%
+                str_replace_all("_", ""),
+    Sex = str_extract(Image, "_[FM]_") %>%
+             str_replace_all("_", ""),
+    Genotype = str_extract(Image, "_(WT|KO)_") %>% 
+      str_replace_all("_", ""),
+    Slice = str_extract(Image, "s\\d+") %>%
+      str_replace("s", ""),
+    Hemisphere = str_extract(Image, "h\\d+") %>%
+      str_replace("h", "")
+  )
+
+
+
+Detections_data_ASPA <- read.csv("DATA/ASPA/ASPACelldata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+
+#adding column for Animal, Sex, GT, slice, hemisphere
+
+Detections_data_ASPA <- Detections_data_ASPA %>%
   mutate(
     Animal = str_extract(Image, "_\\d{6}_") %>%
                 str_replace_all("_", ""),
