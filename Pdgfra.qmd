@@ -4,5 +4,66 @@ format: html
 ---
 
 ```{r}
+#packages
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(multcompView)){install.packages("multcompView")}
+if(!require(dplyr)){install.packages("dplyr")}
+if(!require(rcompanion)){install.packages("rcompanion")}
+if(!require(rcompanion)){install.packages("ggprism")}
 
+library(tidyverse)
+library(stringr)
+library(car)
+library(FSA)
+library(ggpubr)
+library(ggbeeswarm)
+library(ggprism)
+library(ragg)
+
+if(!require(psych)){install.packages("psych")}
+if(!require(FSA)){install.packages("FSA")}
+if(!require(lattice)){install.packages("lattice")}
+if(!require(lsr)){install.packages("lsr")}
+```
+
+```{r}
+#reading in csv files and cleaning
+
+Section_data_Pdgfra <- read.csv("DATA/Pdgfra/Imagedata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+
+#adding column for Animal, Sex, GT, slice, hemisphere
+
+Section_data_Pdgfra <- Section_data_Pdgfra %>%
+  mutate(
+    Animal = str_extract(Image, "_\\d{6}_") %>%
+                str_replace_all("_", ""),
+    Sex = str_extract(Image, "_[FM]_") %>%
+             str_replace_all("_", ""),
+    Genotype = str_extract(Image, "_(WT|KO)_") %>% 
+      str_replace_all("_", ""),
+    Slice = str_extract(Image, "s\\d+") %>%
+      str_replace("s", ""),
+    Hemisphere = str_extract(Image, "h\\d+") %>%
+      str_replace("h", "")
+  )
+
+
+
+Detections_data_Pdgfra <- read.csv("DATA/Pdgfra/Celldata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+
+#adding column for Animal, Sex, GT, slice, hemisphere
+
+Detections_data_Pdgfra <- Detections_data_Pdgfra %>%
+  mutate(
+    Animal = str_extract(Image, "_\\d{6}_") %>%
+                str_replace_all("_", ""),
+    Sex = str_extract(Image, "_[FM]_") %>%
+             str_replace_all("_", ""),
+    Genotype = str_extract(Image, "_(WT|KO)_") %>% 
+      str_replace_all("_", ""),
+    Slice = str_extract(Image, "s\\d+") %>%
+      str_replace("s", ""),
+    Hemisphere = str_extract(Image, "h\\d+") %>%
+      str_replace("h", "")
+  )
 ```
