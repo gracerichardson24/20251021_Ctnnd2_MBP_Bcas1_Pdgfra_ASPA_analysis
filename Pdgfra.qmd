@@ -109,3 +109,61 @@ Detections_data_ASPA <- Detections_data_ASPA %>%
       str_replace("h", "")
   )
 ```
+
+```{r}
+combined_ASPAPdgra <- full_join(
+  Section_data_ASPA,
+  Section_data_Pdgfra,
+  by = c("Animal", "Name", "Sex", "Image", "Object.type", "Num.Detections", "Genotype", "Slice", "Hemisphere")
+)
+
+combined_ASPAPdgra <- combined_ASPAPdgra |>
+  mutate(
+    `ASPA/total` = Num.ASPA./Num.Detections,
+    `Pdgfra/total` = Num.Pdgfra./Num.Detections,
+    `ASPA+/Pdgfra-` = Num.ASPA./Num.Pdgfra..1,
+    `ASPA+/Pdgfra+` = Num.ASPA./Num.Pdgfra.,
+    `ASPA-/Pdgfra+` = Num.ASPA..1/Num.Pdgfra.,
+    `ASPA-/Pdgfra-` = Num.ASPA..1/Num.Pdgfra..1
+  )
+
+combined_ASPAPdgra <- combined_ASPAPdgra |>
+  group_by(Animal, Sex, Genotype) |>
+  summarise(
+    Num.Pdgfra. = mean(Num.Pdgfra.),
+    Num.Pdgfra..1 = mean(Num.Pdgfra..1),
+    Num.ASPA. = mean(Num.ASPA.),
+    Num.ASPA.1 = mean(Num.ASPA..1),
+    Num.Detections = mean(Num.Detections),
+    `ASPA/total` = mean(`ASPA/total`),
+    `Pdgfra/total` = mean(`Pdgfra/total`),
+    `ASPA+/Pdgfra-` = mean(`ASPA+/Pdgfra-`),
+    `ASPA+/Pdgfra+` = mean(`ASPA+/Pdgfra+`),
+    `ASPA-/Pdgfra+` = mean(`ASPA-/Pdgfra+`),
+    `ASPA-/Pdgfra-` = mean(`ASPA-/Pdgfra-`)
+  )
+
+```
+
+```{r}
+#arcsin(sqrt) stretches out values near 0 and compresses values near 1, stabilizes variance for proportion analysis
+combined_ASPAPdgra_clean <- combined_ASPAPdgra[!is.na(combined_ASPAPdgra$`ASPA/total`), ]
+nrow(combined_ASPAPdgra_clean)
+combined_ASPAPdgra_clean$ASPA_trans <- asin(sqrt(combined_ASPAPdgra_clean$`ASPA/total`))
+
+
+#t-test
+t.test(ASPA_trans ~ Genotype, data = combined_ASPAPdgra_clean)
+
+```
+
+```{r}
+#arcsin(sqrt) stretches out values near 0 and compresses values near 1, stabilizes variance for proportion analysis
+combined_ASPAPdgra_clean <- combined_ASPAPdgra[!is.na(combined_ASPAPdgra$`Pdgfra/total`), ]
+nrow(combined_ASPAPdgra_clean)
+combined_ASPAPdgra_clean$Pdgfra_trans <- asin(sqrt(combined_ASPAPdgra_clean$`Pdgfra/total`))
+
+
+#t-test
+t.test(Pdgfra_trans ~ Genotype, data = combined_ASPAPdgra_clean)
+```
