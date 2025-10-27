@@ -151,7 +151,6 @@ combined_ASPAPdgra_clean <- combined_ASPAPdgra[!is.na(combined_ASPAPdgra$`ASPA/t
 nrow(combined_ASPAPdgra_clean)
 combined_ASPAPdgra_clean$ASPA_trans <- asin(sqrt(combined_ASPAPdgra_clean$`ASPA/total`))
 
-
 #t-test
 t.test(ASPA_trans ~ Genotype, data = combined_ASPAPdgra_clean)
 
@@ -163,7 +162,140 @@ combined_ASPAPdgra_clean <- combined_ASPAPdgra[!is.na(combined_ASPAPdgra$`Pdgfra
 nrow(combined_ASPAPdgra_clean)
 combined_ASPAPdgra_clean$Pdgfra_trans <- asin(sqrt(combined_ASPAPdgra_clean$`Pdgfra/total`))
 
-
 #t-test
 t.test(Pdgfra_trans ~ Genotype, data = combined_ASPAPdgra_clean)
+```
+
+```{r}
+Detections_data_ASPA$ASPA <- ifelse(Detections_data_ASPA$Classification == "ASPA+", 1, 0)
+Detections_data_Pdgfra$Pdgfra <- ifelse(Detections_data_Pdgfra$Classification == "Pdgfra+", 1, 0)
+
+combined_detections_ASPAPdgra <- full_join(
+  Detections_data_ASPA,
+  Detections_data_Pdgfra,
+  by = c("Animal", "Image", "Sex", "Centroid.Y.µm", "Genotype", "Slice", "Hemisphere")
+)
+
+combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+  mutate(
+    Pdgfra_pos_ASPA_pos = ifelse(Pdgfra == 1 & ASPA == 1, 1, 0),
+    Pdgfra_pos_ASPA_neg = ifelse(Pdgfra == 1 & ASPA == 0, 1, 0),
+    Pdgfra_neg_ASPA_pos = ifelse(Pdgfra == 0 & ASPA == 1, 1, 0),
+    Pdgfra_neg_ASPA_neg = ifelse(Pdgfra == 0 & ASPA == 0, 1, 0)
+  )
+
+combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra |>
+  group_by(Animal, Sex, Genotype) |>
+  summarise(
+    Total_cells = n(),
+    Pdgfra_pos_ASPA_pos = sum(Pdgfra_pos_ASPA_pos, na.rm = TRUE),
+    Pdgfra_pos_ASPA_neg = sum(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
+    Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
+    Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE)
+  )
+
+combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+  filter(!(Pdgfra_pos_ASPA_pos == 0 &
+           Pdgfra_pos_ASPA_neg == 0 &
+           Pdgfra_neg_ASPA_pos == 0 &
+           Pdgfra_neg_ASPA_neg == 0))
+```
+
+```{r}
+summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+  mutate(
+    prop_Pdgfra_pos_ASPA_pos = Pdgfra_pos_ASPA_pos / Total_cells,
+    prop_Pdgfra_pos_ASPA_neg = Pdgfra_pos_ASPA_neg / Total_cells,
+    prop_Pdgfra_neg_ASPA_pos = Pdgfra_neg_ASPA_pos / Total_cells,
+    prop_Pdgfra_neg_ASPA_neg = Pdgfra_neg_ASPA_neg / Total_cells
+  )
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{<- summary_combined_detections_ASPAPdgra %>%}
+  mutate(
+    prop_Pdgfra_pos_ASPA_pos_trans = asin(sqrt(prop_Pdgfra_pos_ASPA_pos)),
+    prop_Pdgfra_pos_ASPA_neg_trans = asin(sqrt(prop_Pdgfra_pos_ASPA_neg)),
+    prop_Pdgfra_neg_ASPA_pos_trans = asin(sqrt(prop_Pdgfra_neg_ASPA_pos)),
+    prop_Pdgfra_neg_ASPA_neg_trans = asin(sqrt(prop_Pdgfra_neg_ASPA_neg))
+  )
+
+t.test(prop_Pdgfra_pos_ASPA_pos_trans ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(prop_Pdgfra_pos_ASPA_neg_trans ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(prop_Pdgfra_neg_ASPA_pos_trans ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(prop_Pdgfra_neg_ASPA_neg_trans ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+```
+
+```{r}
+combined_ASPAPdgra_clean <- combined_ASPAPdgra_clean %>%
+  rename(ASPA_total = `ASPA/total`)
+
+summary_stats <- combined_ASPAPdgra_clean %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(ASPA_total, na.rm = TRUE),
+    SEM = sd(ASPA_total, na.rm = TRUE)/sqrt(n()),
+    .groups = 'drop'
+  )
+
+ggplot(combined_ASPAPdgra_clean, aes(x = Genotype, y = ASPA_total)) +
+  geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(aes(color = Genotype), width = 0.2, size = 2, alpha = 0.9) +
+  theme_minimal() +
+  xlab("") +
+  ylab("Proportion ASPA+ Cells") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none") +
+  scale_fill_manual(values = c("darkblue", "lightblue")) +
+  scale_color_manual(values = c("darkblue", "lightblue"))
+```
+
+```{r}
+combined_ASPAPdgra_clean <- combined_ASPAPdgra_clean %>%
+  rename(Pdgfra_total = `Pdgfra/total`)
+
+summary_stats <- combined_ASPAPdgra_clean %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(Pdgfra_total, na.rm = TRUE),
+    SEM = sd(Pdgfra_total, na.rm = TRUE)/sqrt(n()),
+    .groups = 'drop'
+  )
+
+ggplot(combined_ASPAPdgra_clean, aes(x = Genotype, y = Pdgfra_total)) +
+  geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(aes(color = Genotype), width = 0.2, size = 2, alpha = 0.9) +
+  theme_minimal() +
+  xlab("") +
+  ylab("Proportion Pdgfra+ Cells") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none") +
+  scale_fill_manual(values = c("darkblue", "lightblue")) +
+  scale_color_manual(values = c("darkblue", "lightblue"))
+```
+
+```{}
 ```
