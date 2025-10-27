@@ -213,13 +213,6 @@ summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
 
 ```
 
-```{r}
-
-```
-
-```{r}
-
-```
 
 ```{<- summary_combined_detections_ASPAPdgra %>%}
   mutate(
@@ -297,5 +290,4 @@ ggplot(combined_ASPAPdgra_clean, aes(x = Genotype, y = Pdgfra_total)) +
   scale_color_manual(values = c("darkblue", "lightblue"))
 ```
 
-```{}
-```
+
