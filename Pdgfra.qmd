@@ -119,8 +119,10 @@ combined_ASPAPdgra <- full_join(
 
 combined_ASPAPdgra <- combined_ASPAPdgra |>
   mutate(
-    `ASPA/total` = Num.ASPA./Num.Detections,
-    `Pdgfra/total` = Num.Pdgfra./Num.Detections,
+    `ASPA/total` = (Num.ASPA./Num.Detections),
+    PercentASPA = `ASPA/total` * 100,
+    `Pdgfra/total` = (Num.Pdgfra./Num.Detections),
+    PercentPdgfra = `Pdgfra/total` * 100,
     `ASPA+/Pdgfra-` = Num.ASPA./Num.Pdgfra..1,
     `ASPA+/Pdgfra+` = Num.ASPA./Num.Pdgfra.,
     `ASPA-/Pdgfra+` = Num.ASPA..1/Num.Pdgfra.,
@@ -146,24 +148,16 @@ combined_ASPAPdgra <- combined_ASPAPdgra |>
 ```
 
 ```{r}
-#arcsin(sqrt) stretches out values near 0 and compresses values near 1, stabilizes variance for proportion analysis
-combined_ASPAPdgra_clean <- combined_ASPAPdgra[!is.na(combined_ASPAPdgra$`ASPA/total`), ]
-nrow(combined_ASPAPdgra_clean)
-combined_ASPAPdgra_clean$ASPA_trans <- asin(sqrt(combined_ASPAPdgra_clean$`ASPA/total`))
-
-#t-test
-t.test(ASPA_trans ~ Genotype, data = combined_ASPAPdgra_clean)
 
 ```
 
 ```{r}
-#arcsin(sqrt) stretches out values near 0 and compresses values near 1, stabilizes variance for proportion analysis
-combined_ASPAPdgra_clean <- combined_ASPAPdgra[!is.na(combined_ASPAPdgra$`Pdgfra/total`), ]
-nrow(combined_ASPAPdgra_clean)
-combined_ASPAPdgra_clean$Pdgfra_trans <- asin(sqrt(combined_ASPAPdgra_clean$`Pdgfra/total`))
 
-#t-test
-t.test(Pdgfra_trans ~ Genotype, data = combined_ASPAPdgra_clean)
+
+```
+
+```{r}
+
 ```
 
 ```{r}
@@ -188,6 +182,9 @@ combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra |>
   group_by(Animal, Sex, Genotype) |>
   summarise(
     Total_cells = n(),
+    ASPA = sum(ASPA, na.rm = TRUE),
+    Pdgfra = sum(Pdgfra, na.rm = TRUE),
+    max_value = max(Centroid.Y.µm, na.rm = TRUE),
     Pdgfra_pos_ASPA_pos = sum(Pdgfra_pos_ASPA_pos, na.rm = TRUE),
     Pdgfra_pos_ASPA_neg = sum(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
     Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
@@ -204,43 +201,58 @@ combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
 ```{r}
 summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
   mutate(
-    prop_Pdgfra_pos_ASPA_pos = Pdgfra_pos_ASPA_pos / Total_cells,
-    prop_Pdgfra_pos_ASPA_neg = Pdgfra_pos_ASPA_neg / Total_cells,
-    prop_Pdgfra_neg_ASPA_pos = Pdgfra_neg_ASPA_pos / Total_cells,
-    prop_Pdgfra_neg_ASPA_neg = Pdgfra_neg_ASPA_neg / Total_cells
+    prop_Pdgfra_pos_ASPA_pos = (Pdgfra_pos_ASPA_pos / Total_cells) * 100,
+    prop_Pdgfra_pos_ASPA_neg = (Pdgfra_pos_ASPA_neg / Total_cells) * 100,
+    prop_Pdgfra_neg_ASPA_pos = (Pdgfra_neg_ASPA_pos / Total_cells) * 100,
+    prop_Pdgfra_neg_ASPA_neg = (Pdgfra_neg_ASPA_neg / Total_cells) * 100,
+    Area = (max_value*879.1)*(500*879.1),
+    Pdgfra_per_area = Pdgfra/Area,
+    ASPA_per_area = ASPA/Area,
+    Pdgfra_pos_ASPA_pos_per_area = Pdgfra_pos_ASPA_pos / Area,
+    Pdgfra_pos_ASPA_neg_per_area = Pdgfra_pos_ASPA_neg / Area,
+    Pdgfra_neg_ASPA_pos_per_area = Pdgfra_neg_ASPA_pos / Area,
+    Pdgfra_neg_ASPA_neg_per_area = Pdgfra_neg_ASPA_neg / Area,
+    Olig2_per_area = Total_cells / Area
   )
 
-
-```
-
-
-```{<- summary_combined_detections_ASPAPdgra %>%}
-  mutate(
-    prop_Pdgfra_pos_ASPA_pos_trans = asin(sqrt(prop_Pdgfra_pos_ASPA_pos)),
-    prop_Pdgfra_pos_ASPA_neg_trans = asin(sqrt(prop_Pdgfra_pos_ASPA_neg)),
-    prop_Pdgfra_neg_ASPA_pos_trans = asin(sqrt(prop_Pdgfra_neg_ASPA_pos)),
-    prop_Pdgfra_neg_ASPA_neg_trans = asin(sqrt(prop_Pdgfra_neg_ASPA_neg))
-  )
-
-t.test(prop_Pdgfra_pos_ASPA_pos_trans ~ Genotype, data = summary_combined_detections_ASPAPdgra)
-t.test(prop_Pdgfra_pos_ASPA_neg_trans ~ Genotype, data = summary_combined_detections_ASPAPdgra)
-t.test(prop_Pdgfra_neg_ASPA_pos_trans ~ Genotype, data = summary_combined_detections_ASPAPdgra)
-t.test(prop_Pdgfra_neg_ASPA_neg_trans ~ Genotype, data = summary_combined_detections_ASPAPdgra)
 ```
 
 ```{r}
-combined_ASPAPdgra_clean <- combined_ASPAPdgra_clean %>%
-  rename(ASPA_total = `ASPA/total`)
+#ASPA
+#arcsin(sqrt) stretches out values near 0 and compresses values near 1, stabilizes variance for proportion analysis
 
-summary_stats <- combined_ASPAPdgra_clean %>%
+#t-test on Olig2/area
+t.test(Olig2_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+
+#t-test on ASPA+/area
+t.test(ASPA_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+
+#Pdgfra
+
+t.test(Pdgfra_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+
+```
+
+```{r}
+t.test(Pdgfra_pos_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(Pdgfra_pos_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(Pdgfra_neg_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(Pdgfra_neg_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+```
+
+```{r}
+summary_combined_detections_ASPAPdgra <- summary_combined_detections_ASPAPdgra %>%
+  rename(ASPA_per_area = `ASPA_per_area`)
+
+summary_stats <- summary_combined_detections_ASPAPdgra %>%
   group_by(Genotype) %>%
   summarise(
-    MeanCount = mean(ASPA_total, na.rm = TRUE),
-    SEM = sd(ASPA_total, na.rm = TRUE)/sqrt(n()),
+    MeanCount = mean(ASPA_per_area, na.rm = TRUE),
+    SEM = sd(ASPA_per_area, na.rm = TRUE)/sqrt(n()),
     .groups = 'drop'
   )
 
-ggplot(combined_ASPAPdgra_clean, aes(x = Genotype, y = ASPA_total)) +
+ggplot(summary_combined_detections_ASPAPdgra, aes(x = Genotype, y = ASPA_per_area)) +
   geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
   geom_errorbar(
     data = summary_stats,
@@ -289,5 +301,3 @@ ggplot(combined_ASPAPdgra_clean, aes(x = Genotype, y = Pdgfra_total)) +
   scale_fill_manual(values = c("darkblue", "lightblue")) +
   scale_color_manual(values = c("darkblue", "lightblue"))
 ```
-
-
