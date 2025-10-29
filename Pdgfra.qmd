@@ -148,19 +148,6 @@ combined_ASPAPdgra <- combined_ASPAPdgra |>
 ```
 
 ```{r}
-
-```
-
-```{r}
-
-
-```
-
-```{r}
-
-```
-
-```{r}
 Detections_data_ASPA$ASPA <- ifelse(Detections_data_ASPA$Classification == "ASPA+", 1, 0)
 Detections_data_Pdgfra$Pdgfra <- ifelse(Detections_data_Pdgfra$Classification == "Pdgfra+", 1, 0)
 
@@ -178,6 +165,74 @@ combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
     Pdgfra_neg_ASPA_neg = ifelse(Pdgfra == 0 & ASPA == 0, 1, 0)
   )
 
+combined_detections_ASPA_Pdgfrabinned <- combined_detections_ASPAPdgra %>%
+  group_by(Image) %>%
+  mutate(
+    Y_max = max(`Centroid.Y.µm`, na.rm = TRUE),
+    Y_norm = `Centroid.Y.µm` / Y_max,
+    bin = 10 * round(Y_norm + 0.05, digits = 1)
+  ) %>%
+  ungroup()
+
+# Assume df has columns: Image, Class
+# First, get unique image IDs
+unique_images <- unique(combined_detections_ASPA_Pdgfrabinned$Image)
+# Initialize empty results data frame
+combined_detections_ASPA_Pdgfrabinned_counts <- data.frame(
+  Image = character(),
+  bin = integer(),
+  Animal = character(),
+  Genotype = character(),
+  P_pos_A_pos = numeric(),
+  P_pos_A_neg = numeric(),
+  P_neg_A_pos = numeric(),
+  P_neg_A_neg = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through images and bins
+unique_images <- unique(combined_detections_ASPA_Pdgfrabinned$Image)
+
+for (img in unique_images) {
+  for (b in 1:10) {
+    temp <- combined_detections_ASPA_Pdgfrabinned %>%
+      filter(Image == img, bin == b)
+    
+    if (nrow(temp) == 0) next
+    
+    area_mm2 <- ((temp$Y_max[1] / 10) / 879.1) * (500 / 879.1)
+    
+    P_pos_A_pos <- sum(temp$Pdgfra_pos_ASPA_pos == "1") / area_mm2
+    P_pos_A_neg <- sum(temp$Pdgfra_pos_ASPA_neg == "1") / area_mm2
+    P_neg_A_pos <- sum(temp$Pdgfra_neg_ASPA_pos == "1") / area_mm2
+    P_neg_A_neg <- sum(temp$Pdgfra_neg_ASPA_neg == "1") / area_mm2
+    
+    combined_detections_ASPA_Pdgfrabinned_counts <- rbind(
+      combined_detections_ASPA_Pdgfrabinned_counts,
+      data.frame(
+        Image = img,
+        bin = b,
+        Animal = unique(temp$Animal),
+        Genotype = unique(temp$Genotype),
+        P_pos_A_pos = P_pos_A_pos,
+        P_pos_A_neg = P_pos_A_neg,
+        P_neg_A_pos = P_neg_A_pos,
+        P_neg_A_neg = P_neg_A_neg
+      )
+    )
+  }
+}
+
+combined_detections_ASPA_Pdgfrabinned_counts <- combined_detections_ASPA_Pdgfrabinned_counts %>%
+  filter(!(P_pos_A_pos == 0 &
+           P_pos_A_neg == 0 &
+           P_neg_A_pos == 0 &
+           P_neg_A_neg == 0))
+
+# View result
+print(combined_detections_ASPA_Pdgfrabinned_counts)
+
+
 combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra |>
   group_by(Animal, Sex, Genotype) |>
   summarise(
@@ -190,6 +245,8 @@ combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra |>
     Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
     Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE)
   )
+
+
 
 combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
   filter(!(Pdgfra_pos_ASPA_pos == 0 &
@@ -238,6 +295,35 @@ t.test(Pdgfra_pos_ASPA_pos_per_area ~ Genotype, data = summary_combined_detectio
 t.test(Pdgfra_pos_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
 t.test(Pdgfra_neg_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
 t.test(Pdgfra_neg_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+```
+
+```{r}
+PposApos = lm(P_pos_A_pos ~ bin + Genotype + bin:Genotype,
+           data = combined_detections_ASPA_Pdgfrabinned_counts)
+print(summary(PposApos))
+Anova(PposApos, type = "II")
+
+
+
+PposAneg = lm(P_pos_A_neg ~ bin + Genotype + bin:Genotype,
+           data = combined_detections_ASPA_Pdgfrabinned_counts)
+print(summary(PposAneg))
+Anova(PposAneg, type = "II")
+
+
+
+
+PnegApos = lm(P_neg_A_pos ~ bin + Genotype + bin:Genotype,
+           data = combined_detections_ASPA_Pdgfrabinned_counts)
+print(summary(PnegApos))
+Anova(PnegApos, type = "II")
+
+
+
+PnegAneg = lm(P_neg_A_neg ~ bin + Genotype + bin:Genotype,
+           data = combined_detections_ASPA_Pdgfrabinned_counts)
+print(summary(PnegAneg))
+Anova(PnegAneg, type = "II")
 ```
 
 ```{r}
