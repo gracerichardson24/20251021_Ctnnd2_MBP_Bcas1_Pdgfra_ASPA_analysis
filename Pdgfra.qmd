@@ -298,31 +298,32 @@ t.test(Pdgfra_neg_ASPA_neg_per_area ~ Genotype, data = summary_combined_detectio
 ```
 
 ```{r}
-PposApos = lm(P_pos_A_pos ~ bin + Genotype + bin:Genotype,
+PposApos = lm(P_pos_A_pos ~ bin * Genotype,
            data = combined_detections_ASPA_Pdgfrabinned_counts)
-print(summary(PposApos))
+summary(PposApos)
 Anova(PposApos, type = "II")
+```
 
-
-
-PposAneg = lm(P_pos_A_neg ~ bin + Genotype + bin:Genotype,
+```{r}
+PposAneg = lm(P_pos_A_neg ~ bin * Genotype,
            data = combined_detections_ASPA_Pdgfrabinned_counts)
-print(summary(PposAneg))
+summary(PposAneg)
 Anova(PposAneg, type = "II")
+```
 
-
-
-
-PnegApos = lm(P_neg_A_pos ~ bin + Genotype + bin:Genotype,
+```{r}
+PnegApos = lm(P_neg_A_pos ~ bin * Genotype ,
            data = combined_detections_ASPA_Pdgfrabinned_counts)
-print(summary(PnegApos))
+summary(PnegApos)
+
 Anova(PnegApos, type = "II")
+```
 
+```{r}
 
-
-PnegAneg = lm(P_neg_A_neg ~ bin + Genotype + bin:Genotype,
+PnegAneg = lm(P_neg_A_neg ~ bin * Genotype,
            data = combined_detections_ASPA_Pdgfrabinned_counts)
-print(summary(PnegAneg))
+summary(PnegAneg)
 Anova(PnegAneg, type = "II")
 ```
 
