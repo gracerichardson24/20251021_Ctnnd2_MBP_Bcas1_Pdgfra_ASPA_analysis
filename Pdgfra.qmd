@@ -3,6 +3,8 @@ title: "Pdgfra"
 format: html
 ---
 
+## Packages
+
 ```{r}
 #packages
 if(!require(lsmeans)){install.packages("lsmeans")}
@@ -23,12 +25,17 @@ library(ragg)
 if(!require(psych)){install.packages("psych")}
 if(!require(FSA)){install.packages("FSA")}
 if(!require(lattice)){install.packages("lattice")}
-if(!require(lsr)){install.packages("lsr")}
+if(!require(lsr)){install.packages("lsr")} 
 ```
 
+## Reading in, Cleaning Pdgfra CSVs
+
 ```{r}
+#PDGFRA
+
 #reading in csv files and cleaning
 
+#Pdgfra Section Data
 Section_data_Pdgfra <- read.csv("DATA/Pdgfra/PdgfraImagedata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
 
 #adding column for Animal, Sex, GT, slice, hemisphere
@@ -47,8 +54,7 @@ Section_data_Pdgfra <- Section_data_Pdgfra %>%
       str_replace("h", "")
   )
 
-
-
+#Pdgfra Cell Data
 Detections_data_Pdgfra <- read.csv("DATA/Pdgfra/PdgfraCelldata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
 
 #adding column for Animal, Sex, GT, slice, hemisphere
@@ -68,12 +74,15 @@ Detections_data_Pdgfra <- Detections_data_Pdgfra %>%
   )
 ```
 
+## Reading in, Cleaning ASPA CSVs
+
 ```{r}
 #reading in csv files and cleaning
 
+#ASPA Section Data
 Section_data_ASPA <- read.csv("DATA/ASPA/ASPAImagedata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
 
-#adding column for Animal, Sex, GT, slice, hemisphere
+#adding column for Animal, Sex, Genotype, slice, hemisphere
 
 Section_data_ASPA <- Section_data_ASPA %>%
   mutate(
@@ -89,11 +98,10 @@ Section_data_ASPA <- Section_data_ASPA %>%
       str_replace("h", "")
   )
 
-
-
+#ASPA Cell Data
 Detections_data_ASPA <- read.csv("DATA/ASPA/ASPACelldata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
 
-#adding column for Animal, Sex, GT, slice, hemisphere
+#adding column for Animal, Sex, Genotype, slice, hemisphere
 
 Detections_data_ASPA <- Detections_data_ASPA %>%
   mutate(
@@ -110,6 +118,8 @@ Detections_data_ASPA <- Detections_data_ASPA %>%
   )
 ```
 
+## Combining ASPA and Pdgfra Section CSVs, Ratios, and Grouping by Animal (averaging across animal)
+
 ```{r}
 combined_ASPAPdgra <- full_join(
   Section_data_ASPA,
@@ -117,6 +127,7 @@ combined_ASPAPdgra <- full_join(
   by = c("Animal", "Name", "Sex", "Image", "Object.type", "Num.Detections", "Genotype", "Slice", "Hemisphere")
 )
 
+#Ratios and Percentage Calculations
 combined_ASPAPdgra <- combined_ASPAPdgra |>
   mutate(
     `ASPA/total` = (Num.ASPA./Num.Detections),
@@ -129,6 +140,7 @@ combined_ASPAPdgra <- combined_ASPAPdgra |>
     `ASPA-/Pdgfra-` = Num.ASPA..1/Num.Pdgfra..1
   )
 
+#Making into Animal Dataframe by Averaging Section Counts and Ratios
 combined_ASPAPdgra <- combined_ASPAPdgra |>
   group_by(Animal, Sex, Genotype) |>
   summarise(
@@ -147,16 +159,21 @@ combined_ASPAPdgra <- combined_ASPAPdgra |>
 
 ```
 
+## Combining Dataframes, Binned Analysis
+
 ```{r}
+#If cell `Classification` is ASPA+ or PDGFRA+, make`ASPA` or `Pdgfra` = 1. If negative, 0.
 Detections_data_ASPA$ASPA <- ifelse(Detections_data_ASPA$Classification == "ASPA+", 1, 0)
 Detections_data_Pdgfra$Pdgfra <- ifelse(Detections_data_Pdgfra$Classification == "Pdgfra+", 1, 0)
 
+#Combine cell dataframes to make one combined df with all cell data. Cells with the same Centroid.Y are assumed to be same cell.
 combined_detections_ASPAPdgra <- full_join(
   Detections_data_ASPA,
   Detections_data_Pdgfra,
   by = c("Animal", "Image", "Sex", "Centroid.Y.µm", "Genotype", "Slice", "Hemisphere")
 )
 
+#Using both the Pdgfra and ASPA information, sorting cells into 4 categories based on Pdgfra+- and ASPA +- identity
 combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
   mutate(
     Pdgfra_pos_ASPA_pos = ifelse(Pdgfra == 1 & ASPA == 1, 1, 0),
@@ -165,6 +182,9 @@ combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
     Pdgfra_neg_ASPA_neg = ifelse(Pdgfra == 0 & ASPA == 0, 1, 0)
   )
 
+#BINNED ANALYSIS MODIFIED FROM GABI
+
+#obtaining maximum Y value for each image and normalizing their Y values to that to create and sort cells into 10 equal bins 
 combined_detections_ASPA_Pdgfrabinned <- combined_detections_ASPAPdgra %>%
   group_by(Image) %>%
   mutate(
@@ -175,6 +195,7 @@ combined_detections_ASPA_Pdgfrabinned <- combined_detections_ASPAPdgra %>%
   ungroup()
 
 # Assume df has columns: Image, Class
+
 # First, get unique image IDs
 unique_images <- unique(combined_detections_ASPA_Pdgfrabinned$Image)
 # Initialize empty results data frame
@@ -246,8 +267,7 @@ combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra |>
     Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE)
   )
 
-
-
+#Remove cells missing data
 combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
   filter(!(Pdgfra_pos_ASPA_pos == 0 &
            Pdgfra_pos_ASPA_neg == 0 &
@@ -262,7 +282,7 @@ summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
     prop_Pdgfra_pos_ASPA_neg = (Pdgfra_pos_ASPA_neg / Total_cells) * 100,
     prop_Pdgfra_neg_ASPA_pos = (Pdgfra_neg_ASPA_pos / Total_cells) * 100,
     prop_Pdgfra_neg_ASPA_neg = (Pdgfra_neg_ASPA_neg / Total_cells) * 100,
-    Area = (max_value*879.1)*(500*879.1),
+    Area = (max_value/879.1)*(500/879.1),
     Pdgfra_per_area = Pdgfra/Area,
     ASPA_per_area = ASPA/Area,
     Pdgfra_pos_ASPA_pos_per_area = Pdgfra_pos_ASPA_pos / Area,
@@ -275,8 +295,7 @@ summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
 ```
 
 ```{r}
-#ASPA
-#arcsin(sqrt) stretches out values near 0 and compresses values near 1, stabilizes variance for proportion analysis
+#T-Tests on Individual Cell Counts/Area
 
 #t-test on Olig2/area
 t.test(Olig2_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
@@ -291,6 +310,8 @@ t.test(Pdgfra_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
 ```
 
 ```{r}
+#T-Tests on Combined Cell ID Counts/Area
+
 t.test(Pdgfra_pos_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
 t.test(Pdgfra_pos_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
 t.test(Pdgfra_neg_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
