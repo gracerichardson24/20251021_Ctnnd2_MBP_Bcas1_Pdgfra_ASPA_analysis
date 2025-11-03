@@ -320,6 +320,7 @@ t.test(Pdgfra_pos_ASPA_neg_per_area ~ Genotype, data = summary_combined_detectio
 t.test(Pdgfra_neg_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
 t.test(Pdgfra_neg_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
 ```
+
 ```{r}
 # Get animal averages for binned data before proceeding to statistical tests
 combined_detections_ASPA_Pdgfrabinned_counts_animal <- combined_detections_ASPA_Pdgfrabinned_counts %>%
@@ -342,6 +343,42 @@ PposApos = lm(P_pos_A_pos ~ bin * Genotype,
 summary(PposApos)
 Anova(PposApos, type = "II")
 ```
+```{r}
+library(plotrix)
+#line plot for Pdgfra+, ASPA+ counts
+combined_detections_ASPA_Pdgfrabinned_counts_animal_summary <- combined_detections_ASPA_Pdgfrabinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_P_pos_A_pos = mean(P_pos_A_pos),
+    se_P_pos_A_pos = std.error(P_pos_A_pos),
+    .groups = "drop"
+  )
+#reorder so WT is listed first in legend
+combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype <- factor(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+P_pos_A_pos_binned_density_plot <- # Create the plot
+ggplot(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary, aes(x = bin, y = mean_P_pos_A_pos, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_P_pos_A_pos - se_P_pos_A_pos, ymax = mean_P_pos_A_pos + se_P_pos_A_pos, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    x = "Distance from Pia (% total cortical thickness)",
+    y = expression("cells / " ~ mm^2),
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+png(filename = "p30_Ctnnd2_lineplot_P_pos_A_pos_counts_binned.png", width = 1200, height = 850, res = 300)
+  P_pos_A_pos_binned_density_plot
+  dev.off()
+P_pos_A_pos_binned_density_plot
+```
+
+
 
 ```{r}
 PposAneg = lm(P_pos_A_neg ~ bin * Genotype,
@@ -349,6 +386,41 @@ PposAneg = lm(P_pos_A_neg ~ bin * Genotype,
 summary(PposAneg)
 Anova(PposAneg, type = "II")
 ```
+```{r}
+library(plotrix)
+#line plot for Pdgfra+, ASPA+ counts
+combined_detections_ASPA_Pdgfrabinned_counts_animal_summary <- combined_detections_ASPA_Pdgfrabinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_P_pos_A_neg = mean(P_pos_A_neg),
+    se_P_pos_A_neg = std.error(P_pos_A_neg),
+    .groups = "drop"
+  )
+#reorder so WT is listed first in legend
+combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype <- factor(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+P_pos_A_neg_binned_density_plot <- # Create the plot
+ggplot(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary, aes(x = bin, y = mean_P_pos_A_neg, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_P_pos_A_neg - se_P_pos_A_neg, ymax = mean_P_pos_A_neg + se_P_pos_A_neg, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    x = "Distance from Pia (% total cortical thickness)",
+    y = expression("cells / " ~ mm^2),
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+png(filename = "p30_Ctnnd2_lineplot_P_pos_A_neg_counts_binned.png", width = 1200, height = 850, res = 300)
+  P_pos_A_neg_binned_density_plot
+  dev.off()
+P_pos_A_neg_binned_density_plot
+```
+
 
 ```{r}
 PnegApos = lm(P_neg_A_pos ~ bin * Genotype ,
@@ -357,6 +429,41 @@ summary(PnegApos)
 
 Anova(PnegApos, type = "II")
 ```
+```{r}
+library(plotrix)
+#line plot for Pdgfra+, ASPA+ counts
+combined_detections_ASPA_Pdgfrabinned_counts_animal_summary <- combined_detections_ASPA_Pdgfrabinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_P_neg_A_pos = mean(P_neg_A_pos),
+    se_P_neg_A_pos = std.error(P_neg_A_pos),
+    .groups = "drop"
+  )
+#reorder so WT is listed first in legend
+combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype <- factor(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+P_neg_A_pos_binned_density_plot <- # Create the plot
+ggplot(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary, aes(x = bin, y = mean_P_neg_A_pos, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_P_neg_A_pos - se_P_neg_A_pos, ymax = mean_P_neg_A_pos + se_P_neg_A_pos, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    x = "Distance from Pia (% total cortical thickness)",
+    y = expression("cells / " ~ mm^2),
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+png(filename = "p30_Ctnnd2_lineplot_P_neg_A_pos_counts_binned.png", width = 1200, height = 850, res = 300)
+  P_neg_A_pos_binned_density_plot
+  dev.off()
+P_neg_A_pos_binned_density_plot
+```
+
 
 ```{r}
 combined_detections_ASPA_Pdgfrabinned_counts_animal$bin <- as.factor(combined_detections_ASPA_Pdgfrabinned_counts_animal$bin)
@@ -365,6 +472,42 @@ PnegAneg = lm(P_neg_A_neg ~ bin * Genotype,
 summary(PnegAneg)
 Anova(PnegAneg, type = "II")
 ```
+```{r}
+library(plotrix)
+#line plot for Pdgfra+, ASPA+ counts
+combined_detections_ASPA_Pdgfrabinned_counts_animal_summary <- combined_detections_ASPA_Pdgfrabinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_P_neg_A_neg = mean(P_neg_A_neg),
+    se_P_neg_A_neg = std.error(P_neg_A_neg),
+    .groups = "drop"
+  )
+#reorder so WT is listed first in legend
+combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype <- factor(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+P_neg_A_neg_binned_density_plot <- # Create the plot
+ggplot(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary, aes(x = bin, y = mean_P_neg_A_pos, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_P_neg_A_neg - se_P_neg_A_neg, ymax = mean_P_neg_A_neg + se_P_neg_A_neg, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    x = "Distance from Pia (% total cortical thickness)",
+    y = expression("cells / " ~ mm^2),
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+png(filename = "p30_Ctnnd2_lineplot_P_neg_A_neg_counts_binned.png", width = 1200, height = 850, res = 300)
+P_neg_A_neg_binned_density_plot
+  dev.off()
+P_neg_A_neg_binned_density_plot
+```
+
+
 ```{r}
 # Posthoc testing for P_pos_A_neg
 library(car)
