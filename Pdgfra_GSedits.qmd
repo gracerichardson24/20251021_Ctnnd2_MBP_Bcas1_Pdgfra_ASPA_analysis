@@ -1,0 +1,520 @@
+---
+title: "Pdgfra"
+format: html
+---
+
+## Packages
+
+```{r}
+#packages
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(multcompView)){install.packages("multcompView")}
+if(!require(dplyr)){install.packages("dplyr")}
+if(!require(rcompanion)){install.packages("rcompanion")}
+if(!require(rcompanion)){install.packages("ggprism")}
+
+library(tidyverse)
+library(stringr)
+library(car)
+library(FSA)
+library(ggpubr)
+library(ggbeeswarm)
+library(ggprism)
+library(ragg)
+
+if(!require(psych)){install.packages("psych")}
+if(!require(FSA)){install.packages("FSA")}
+if(!require(lattice)){install.packages("lattice")}
+if(!require(lsr)){install.packages("lsr")} 
+```
+
+## Reading in, Cleaning Pdgfra CSVs
+
+```{r}
+#PDGFRA
+
+#reading in csv files and cleaning
+
+#Pdgfra Section Data
+Section_data_Pdgfra <- read.csv("DATA/Pdgfra/PdgfraImagedata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+
+#adding column for Animal, Sex, GT, slice, hemisphere
+
+Section_data_Pdgfra <- Section_data_Pdgfra %>%
+  mutate(
+    Animal = str_extract(Image, "_\\d{6}_") %>%
+                str_replace_all("_", ""),
+    Sex = str_extract(Image, "_[FM]_") %>%
+             str_replace_all("_", ""),
+    Genotype = str_extract(Image, "_(WT|KO)_") %>% 
+      str_replace_all("_", ""),
+    Slice = str_extract(Image, "s\\d+") %>%
+      str_replace("s", ""),
+    Hemisphere = str_extract(Image, "h\\d+") %>%
+      str_replace("h", "")
+  )
+
+#Pdgfra Cell Data
+Detections_data_Pdgfra <- read.csv("DATA/Pdgfra/PdgfraCelldata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+
+#adding column for Animal, Sex, GT, slice, hemisphere
+
+Detections_data_Pdgfra <- Detections_data_Pdgfra %>%
+  mutate(
+    Animal = str_extract(Image, "_\\d{6}_") %>%
+                str_replace_all("_", ""),
+    Sex = str_extract(Image, "_[FM]_") %>%
+             str_replace_all("_", ""),
+    Genotype = str_extract(Image, "_(WT|KO)_") %>% 
+      str_replace_all("_", ""),
+    Slice = str_extract(Image, "s\\d+") %>%
+      str_replace("s", ""),
+    Hemisphere = str_extract(Image, "h\\d+") %>%
+      str_replace("h", "")
+  )
+```
+
+## Reading in, Cleaning ASPA CSVs
+
+```{r}
+#reading in csv files and cleaning
+
+#ASPA Section Data
+Section_data_ASPA <- read.csv("DATA/ASPA/ASPAImagedata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+
+#adding column for Animal, Sex, Genotype, slice, hemisphere
+
+Section_data_ASPA <- Section_data_ASPA %>%
+  mutate(
+    Animal = str_extract(Image, "_\\d{6}_") %>%
+                str_replace_all("_", ""),
+    Sex = str_extract(Image, "_[FM]_") %>%
+             str_replace_all("_", ""),
+    Genotype = str_extract(Image, "_(WT|KO)_") %>% 
+      str_replace_all("_", ""),
+    Slice = str_extract(Image, "s\\d+") %>%
+      str_replace("s", ""),
+    Hemisphere = str_extract(Image, "h\\d+") %>%
+      str_replace("h", "")
+  )
+
+#ASPA Cell Data
+Detections_data_ASPA <- read.csv("DATA/ASPA/ASPACelldata_20250917_CTNND2_ASTRO_oligstain_juvenile_set2_ASPA_Pdgfra.csv")
+
+#adding column for Animal, Sex, Genotype, slice, hemisphere
+
+Detections_data_ASPA <- Detections_data_ASPA %>%
+  mutate(
+    Animal = str_extract(Image, "_\\d{6}_") %>%
+                str_replace_all("_", ""),
+    Sex = str_extract(Image, "_[FM]_") %>%
+             str_replace_all("_", ""),
+    Genotype = str_extract(Image, "_(WT|KO)_") %>% 
+      str_replace_all("_", ""),
+    Slice = str_extract(Image, "s\\d+") %>%
+      str_replace("s", ""),
+    Hemisphere = str_extract(Image, "h\\d+") %>%
+      str_replace("h", "")
+  )
+```
+
+## Combining ASPA and Pdgfra Section CSVs, Ratios, and Grouping by Animal (averaging across animal)
+
+```{r}
+combined_ASPAPdgra <- full_join(
+  Section_data_ASPA,
+  Section_data_Pdgfra,
+  by = c("Animal", "Name", "Sex", "Image", "Object.type", "Num.Detections", "Genotype", "Slice", "Hemisphere")
+)
+
+#Ratios and Percentage Calculations
+combined_ASPAPdgra <- combined_ASPAPdgra |>
+  mutate(
+    `ASPA/total` = (Num.ASPA./Num.Detections),
+    PercentASPA = `ASPA/total` * 100,
+    `Pdgfra/total` = (Num.Pdgfra./Num.Detections),
+    PercentPdgfra = `Pdgfra/total` * 100,
+    `ASPA+/Pdgfra-` = Num.ASPA./Num.Pdgfra..1,
+    `ASPA+/Pdgfra+` = Num.ASPA./Num.Pdgfra.,
+    `ASPA-/Pdgfra+` = Num.ASPA..1/Num.Pdgfra.,
+    `ASPA-/Pdgfra-` = Num.ASPA..1/Num.Pdgfra..1
+  )
+
+#Making into Animal Dataframe by Averaging Section Counts and Ratios
+combined_ASPAPdgra <- combined_ASPAPdgra |>
+  group_by(Animal, Sex, Genotype) |>
+  summarise(
+    Num.Pdgfra. = mean(Num.Pdgfra.),
+    Num.Pdgfra..1 = mean(Num.Pdgfra..1),
+    Num.ASPA. = mean(Num.ASPA.),
+    Num.ASPA.1 = mean(Num.ASPA..1),
+    Num.Detections = mean(Num.Detections),
+    `ASPA/total` = mean(`ASPA/total`),
+    `Pdgfra/total` = mean(`Pdgfra/total`),
+    `ASPA+/Pdgfra-` = mean(`ASPA+/Pdgfra-`),
+    `ASPA+/Pdgfra+` = mean(`ASPA+/Pdgfra+`),
+    `ASPA-/Pdgfra+` = mean(`ASPA-/Pdgfra+`),
+    `ASPA-/Pdgfra-` = mean(`ASPA-/Pdgfra-`)
+  )
+
+```
+
+## Combining Dataframes, Binned Analysis
+
+```{r}
+#If cell `Classification` is ASPA+ or PDGFRA+, make`ASPA` or `Pdgfra` = 1. If negative, 0.
+Detections_data_ASPA$ASPA <- ifelse(Detections_data_ASPA$Classification == "ASPA+", 1, 0)
+Detections_data_Pdgfra$Pdgfra <- ifelse(Detections_data_Pdgfra$Classification == "Pdgfra+", 1, 0)
+
+#Combine cell dataframes to make one combined df with all cell data. Cells with the same Centroid.Y are assumed to be same cell.
+combined_detections_ASPAPdgra <- full_join(
+  Detections_data_ASPA,
+  Detections_data_Pdgfra,
+  by = c("Animal", "Image", "Sex", "Centroid.Y.µm", "Genotype", "Slice", "Hemisphere")
+)
+
+#Using both the Pdgfra and ASPA information, sorting cells into 4 categories based on Pdgfra+- and ASPA +- identity
+combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+  mutate(
+    Pdgfra_pos_ASPA_pos = ifelse(Pdgfra == 1 & ASPA == 1, 1, 0),
+    Pdgfra_pos_ASPA_neg = ifelse(Pdgfra == 1 & ASPA == 0, 1, 0),
+    Pdgfra_neg_ASPA_pos = ifelse(Pdgfra == 0 & ASPA == 1, 1, 0),
+    Pdgfra_neg_ASPA_neg = ifelse(Pdgfra == 0 & ASPA == 0, 1, 0)
+  )
+
+#BINNED ANALYSIS MODIFIED FROM GABI
+
+#obtaining maximum Y value for each image and normalizing their Y values to that to create and sort cells into 10 equal bins 
+combined_detections_ASPA_Pdgfrabinned <- combined_detections_ASPAPdgra %>%
+  group_by(Image) %>%
+  mutate(
+    Y_max = max(`Centroid.Y.µm`, na.rm = TRUE),
+    Y_norm = `Centroid.Y.µm` / Y_max,
+    bin = 10 * round(Y_norm + 0.05, digits = 1)
+  ) %>%
+  ungroup()
+
+# Assume df has columns: Image, Class
+
+# First, get unique image IDs
+unique_images <- unique(combined_detections_ASPA_Pdgfrabinned$Image)
+# Initialize empty results data frame
+combined_detections_ASPA_Pdgfrabinned_counts <- data.frame(
+  Image = character(),
+  bin = integer(),
+  Animal = character(),
+  Genotype = character(),
+  P_pos_A_pos = numeric(),
+  P_pos_A_neg = numeric(),
+  P_neg_A_pos = numeric(),
+  P_neg_A_neg = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through images and bins
+unique_images <- unique(combined_detections_ASPA_Pdgfrabinned$Image)
+
+for (img in unique_images) {
+  for (b in 1:10) {
+    temp <- combined_detections_ASPA_Pdgfrabinned %>%
+      filter(Image == img, bin == b)
+    
+    if (nrow(temp) == 0) next
+    
+    area_mm2 <- ((temp$Y_max[1] / 10) / 879.1) * (500 / 879.1)
+    
+    P_pos_A_pos <- sum(temp$Pdgfra_pos_ASPA_pos == "1") / area_mm2
+    P_pos_A_neg <- sum(temp$Pdgfra_pos_ASPA_neg == "1") / area_mm2
+    P_neg_A_pos <- sum(temp$Pdgfra_neg_ASPA_pos == "1") / area_mm2
+    P_neg_A_neg <- sum(temp$Pdgfra_neg_ASPA_neg == "1") / area_mm2
+    
+    combined_detections_ASPA_Pdgfrabinned_counts <- rbind(
+      combined_detections_ASPA_Pdgfrabinned_counts,
+      data.frame(
+        Image = img,
+        bin = b,
+        Animal = unique(temp$Animal),
+        Genotype = unique(temp$Genotype),
+        P_pos_A_pos = P_pos_A_pos,
+        P_pos_A_neg = P_pos_A_neg,
+        P_neg_A_pos = P_neg_A_pos,
+        P_neg_A_neg = P_neg_A_neg
+      )
+    )
+  }
+}
+
+combined_detections_ASPA_Pdgfrabinned_counts <- combined_detections_ASPA_Pdgfrabinned_counts %>%
+  filter(!(P_pos_A_pos == 0 &
+           P_pos_A_neg == 0 &
+           P_neg_A_pos == 0 &
+           P_neg_A_neg == 0))
+
+# View result
+print(combined_detections_ASPA_Pdgfrabinned_counts)
+
+
+combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra |>
+  group_by(Animal, Sex, Genotype) |>
+  summarise(
+    Total_cells = n(),
+    ASPA = sum(ASPA, na.rm = TRUE),
+    Pdgfra = sum(Pdgfra, na.rm = TRUE),
+    max_value = max(Centroid.Y.µm, na.rm = TRUE),
+    Pdgfra_pos_ASPA_pos = sum(Pdgfra_pos_ASPA_pos, na.rm = TRUE),
+    Pdgfra_pos_ASPA_neg = sum(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
+    Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
+    Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE)
+  )
+
+#Remove cells missing data
+combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+  filter(!(Pdgfra_pos_ASPA_pos == 0 &
+           Pdgfra_pos_ASPA_neg == 0 &
+           Pdgfra_neg_ASPA_pos == 0 &
+           Pdgfra_neg_ASPA_neg == 0))
+
+# View result
+print(combined_detections_ASPA_Pdgfrabinned_counts)
+```
+
+```{r}
+summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+  mutate(
+    prop_Pdgfra_pos_ASPA_pos = (Pdgfra_pos_ASPA_pos / Total_cells) * 100,
+    prop_Pdgfra_pos_ASPA_neg = (Pdgfra_pos_ASPA_neg / Total_cells) * 100,
+    prop_Pdgfra_neg_ASPA_pos = (Pdgfra_neg_ASPA_pos / Total_cells) * 100,
+    prop_Pdgfra_neg_ASPA_neg = (Pdgfra_neg_ASPA_neg / Total_cells) * 100,
+    Area = (max_value/879.1)*(500/879.1),
+    Pdgfra_per_area = Pdgfra/Area,
+    ASPA_per_area = ASPA/Area,
+    Pdgfra_pos_ASPA_pos_per_area = Pdgfra_pos_ASPA_pos / Area,
+    Pdgfra_pos_ASPA_neg_per_area = Pdgfra_pos_ASPA_neg / Area,
+    Pdgfra_neg_ASPA_pos_per_area = Pdgfra_neg_ASPA_pos / Area,
+    Pdgfra_neg_ASPA_neg_per_area = Pdgfra_neg_ASPA_neg / Area,
+    Olig2_per_area = Total_cells / Area
+  )
+
+```
+
+```{r}
+#T-Tests on Individual Cell Counts/Area
+
+#t-test on Olig2/area
+t.test(Olig2_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+
+#t-test on ASPA+/area
+t.test(ASPA_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+
+#Pdgfra
+
+t.test(Pdgfra_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+
+```
+
+```{r}
+#T-Tests on Combined Cell ID Counts/Area
+
+t.test(Pdgfra_pos_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(Pdgfra_pos_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(Pdgfra_neg_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(Pdgfra_neg_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+```
+```{r}
+# Get animal averages for binned data before proceeding to statistical tests
+combined_detections_ASPA_Pdgfrabinned_counts_animal <- combined_detections_ASPA_Pdgfrabinned_counts %>%
+  group_by(Genotype, Animal, bin) %>%
+  summarise(P_neg_A_pos = mean(P_neg_A_pos),
+            P_pos_A_neg = mean(P_pos_A_neg),
+            P_pos_A_pos = mean(P_pos_A_pos),
+            P_neg_A_neg = mean(P_neg_A_neg),
+            .groups = "drop")
+
+# make 'bin' a factor so all 10 values are evaluated separately
+combined_detections_ASPA_Pdgfrabinned_counts_animal$bin <- as.factor(combined_detections_ASPA_Pdgfrabinned_counts_animal$bin)
+
+print(combined_detections_ASPA_Pdgfrabinned_counts_animal)
+```
+
+```{r}
+PposApos = lm(P_pos_A_pos ~ bin * Genotype,
+           data = combined_detections_ASPA_Pdgfrabinned_counts_animal)
+summary(PposApos)
+Anova(PposApos, type = "II")
+```
+
+```{r}
+PposAneg = lm(P_pos_A_neg ~ bin * Genotype,
+           data = combined_detections_ASPA_Pdgfrabinned_counts_animal)
+summary(PposAneg)
+Anova(PposAneg, type = "II")
+```
+
+```{r}
+PnegApos = lm(P_neg_A_pos ~ bin * Genotype ,
+           data = combined_detections_ASPA_Pdgfrabinned_counts_animal)
+summary(PnegApos)
+
+Anova(PnegApos, type = "II")
+```
+
+```{r}
+combined_detections_ASPA_Pdgfrabinned_counts_animal$bin <- as.factor(combined_detections_ASPA_Pdgfrabinned_counts_animal$bin)
+PnegAneg = lm(P_neg_A_neg ~ bin * Genotype,
+           data = combined_detections_ASPA_Pdgfrabinned_counts_animal)
+summary(PnegAneg)
+Anova(PnegAneg, type = "II")
+```
+```{r}
+# Posthoc testing for P_pos_A_neg
+library(car)
+
+leastsquare <- lsmeans(PposAneg, pairwise ~ Genotype | bin, adjust = "tukey")
+summary(leastsquare$contrasts)
+```
+
+```{r}
+# Plot binned results to check if stats make sense
+# P_neg_A_pos line plot
+library(plotrix)
+
+# Get genotype means for dot and line values, and se for ribbon
+combined_detections_ASPA_Pdgfrabinned_counts_summary <- combined_detections_ASPA_Pdgfrabinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_P_pos_A_neg = mean(P_pos_A_neg),
+    se_P_pos_A_neg = std.error(P_pos_A_neg),
+    .groups = "drop"
+  )
+
+#reorder so WT is listed first in legend
+combined_detections_ASPA_Pdgfrabinned_counts_summary$Genotype <- factor(combined_detections_ASPA_Pdgfrabinned_counts_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+PposAneg_binned_density_plot <- # Create the plot
+ggplot(combined_detections_ASPA_Pdgfrabinned_counts_summary, aes(x = bin, y = mean_P_pos_A_neg, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_P_pos_A_neg - se_P_pos_A_neg, ymax = mean_P_pos_A_neg + se_P_pos_A_neg, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    title = "OPC counts by Distance from Pia",
+    x = "Cortical bin (distance from Pia)",
+    y = "PDGFRa+/ASPA- cell density",
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+
+PposAneg_binned_density_plot
+```
+
+```{r}
+# Posthoc testing for P_neg_A_pos
+library(car)
+
+leastsquare <- lsmeans(PnegApos, pairwise ~ Genotype | bin, adjust = "tukey")
+summary(leastsquare$contrasts)
+```
+
+```{r}
+# Plot binned results to check if stats make sense
+# P_neg_A_pos line plot
+library(plotrix)
+
+# Get genotype means for dot and line values, and se for ribbon
+combined_detections_ASPA_Pdgfrabinned_counts_summary <- combined_detections_ASPA_Pdgfrabinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_P_neg_A_pos = mean(P_neg_A_pos),
+    se_P_neg_A_pos = std.error(P_neg_A_pos),
+    .groups = "drop"
+  )
+
+#reorder so WT is listed first in legend
+combined_detections_ASPA_Pdgfrabinned_counts_summary$Genotype <- factor(combined_detections_ASPA_Pdgfrabinned_counts_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+PnegApos_binned_density_plot <- # Create the plot
+ggplot(combined_detections_ASPA_Pdgfrabinned_counts_summary, aes(x = bin, y = mean_P_neg_A_pos, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_P_neg_A_pos - se_P_neg_A_pos, ymax = mean_P_neg_A_pos + se_P_neg_A_pos, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    title = "MOL counts by Distance from Pia",
+    x = "Cortical bin (distance from Pia)",
+    y = "ASPA+/PDGFRa- cell density",
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+
+PnegApos_binned_density_plot
+```
+
+```{r}
+summary_combined_detections_ASPAPdgra <- summary_combined_detections_ASPAPdgra %>%
+  rename(ASPA_per_area = `ASPA_per_area`)
+
+summary_stats <- summary_combined_detections_ASPAPdgra %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(ASPA_per_area, na.rm = TRUE),
+    SEM = sd(ASPA_per_area, na.rm = TRUE)/sqrt(n()),
+    .groups = 'drop'
+  )
+
+ggplot(summary_combined_detections_ASPAPdgra, aes(x = Genotype, y = ASPA_per_area)) +
+  geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(aes(color = Genotype), width = 0.2, size = 2, alpha = 0.9) +
+  theme_minimal() +
+  xlab("") +
+  ylab("Proportion ASPA+ Cells") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none") +
+  scale_fill_manual(values = c("darkblue", "lightblue")) +
+  scale_color_manual(values = c("darkblue", "lightblue"))
+```
+
+```{r}
+combined_ASPAPdgra_clean <- combined_ASPAPdgra_clean %>%
+  rename(Pdgfra_total = `Pdgfra/total`)
+
+summary_stats <- combined_ASPAPdgra_clean %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(Pdgfra_total, na.rm = TRUE),
+    SEM = sd(Pdgfra_total, na.rm = TRUE)/sqrt(n()),
+    .groups = 'drop'
+  )
+
+ggplot(combined_ASPAPdgra_clean, aes(x = Genotype, y = Pdgfra_total)) +
+  geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(aes(color = Genotype), width = 0.2, size = 2, alpha = 0.9) +
+  theme_minimal() +
+  xlab("") +
+  ylab("Proportion Pdgfra+ Cells") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none") +
+  scale_fill_manual(values = c("darkblue", "lightblue")) +
+  scale_color_manual(values = c("darkblue", "lightblue"))
+```
