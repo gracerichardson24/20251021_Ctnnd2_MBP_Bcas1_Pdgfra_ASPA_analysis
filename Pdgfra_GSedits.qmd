@@ -253,41 +253,71 @@ combined_detections_ASPA_Pdgfrabinned_counts <- combined_detections_ASPA_Pdgfrab
 # View result
 print(combined_detections_ASPA_Pdgfrabinned_counts)
 
-
-combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra |>
-  group_by(Animal, Sex, Genotype) |>
-  summarise(
-    Total_cells = n(),
-    ASPA = sum(ASPA, na.rm = TRUE),
-    Pdgfra = sum(Pdgfra, na.rm = TRUE),
-    max_value = max(Centroid.Y.µm, na.rm = TRUE),
-    Pdgfra_pos_ASPA_pos = sum(Pdgfra_pos_ASPA_pos, na.rm = TRUE),
-    Pdgfra_pos_ASPA_neg = sum(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
-    Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
-    Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE)
-  )
-
-#Remove cells missing data
-combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
-  filter(!(Pdgfra_pos_ASPA_pos == 0 &
-           Pdgfra_pos_ASPA_neg == 0 &
-           Pdgfra_neg_ASPA_pos == 0 &
-           Pdgfra_neg_ASPA_neg == 0))
+# combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra |>
+#   group_by(Animal, Sex, Genotype) |>
+#   summarise(
+#     Total_cells = n(),
+#     mean_ASPA = mean(ASPA, na.rm = TRUE),
+#     mean_Pdgfra = mean(Pdgfra, na.rm = TRUE),
+#     ASPA = sum(ASPA, na.rm = TRUE),
+#     Pdgfra = sum(Pdgfra, na.rm = TRUE),
+#     max_value = max(Centroid.Y.µm, na.rm = TRUE),
+#     Pdgfra_pos_ASPA_pos = sum(Pdgfra_pos_ASPA_pos, na.rm = TRUE),
+#     Pdgfra_pos_ASPA_neg = sum(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
+#     Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
+#     Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE),
+#   )
+# 
+# #Remove cells missing data
+# combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+#   filter(!(Pdgfra_pos_ASPA_pos == 0 &
+#            Pdgfra_pos_ASPA_neg == 0 &
+#            Pdgfra_neg_ASPA_pos == 0 &
+#            Pdgfra_neg_ASPA_neg == 0))
 
 # View result
 print(combined_detections_ASPA_Pdgfrabinned_counts)
 ```
 
 ```{r}
-summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+# summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+#   mutate(
+#     prop_Pdgfra_pos_ASPA_pos = (Pdgfra_pos_ASPA_pos / Total_cells) * 100,
+#     prop_Pdgfra_pos_ASPA_neg = (Pdgfra_pos_ASPA_neg / Total_cells) * 100,
+#     prop_Pdgfra_neg_ASPA_pos = (Pdgfra_neg_ASPA_pos / Total_cells) * 100,
+#     prop_Pdgfra_neg_ASPA_neg = (Pdgfra_neg_ASPA_neg / Total_cells) * 100,
+#     Area = (max_value/879.1)*(500/879.1),
+#     Pdgfra_per_area = Pdgfra/Area,
+#     ASPA_per_area = ASPA/Area,
+#     Pdgfra_pos_ASPA_pos_per_area = Pdgfra_pos_ASPA_pos / Area,
+#     Pdgfra_pos_ASPA_neg_per_area = Pdgfra_pos_ASPA_neg / Area,
+#     Pdgfra_neg_ASPA_pos_per_area = Pdgfra_neg_ASPA_pos / Area,
+#     Pdgfra_neg_ASPA_neg_per_area = Pdgfra_neg_ASPA_neg / Area,
+#     Olig2_per_area = Total_cells / Area
+#   )
+
+```
+
+```{r}
+
+imageframe_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
+  group_by(Animal, Genotype, Slice, Hemisphere) %>%
+  summarise(
+    Total_cells = n(),
+    # Totals of the flag columns (they sum 0/1 -> counts)
+    total_ASPA = sum(ASPA, na.rm = TRUE),
+    total_Pdgfra = sum(Pdgfra, na.rm = TRUE),
+    Pdgfra_pos_ASPA_pos = sum(Pdgfra_pos_ASPA_pos, na.rm = TRUE),
+    Pdgfra_pos_ASPA_neg = sum(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
+    Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
+    Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE),
+    max_value = max(Centroid.Y.µm, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
   mutate(
-    prop_Pdgfra_pos_ASPA_pos = (Pdgfra_pos_ASPA_pos / Total_cells) * 100,
-    prop_Pdgfra_pos_ASPA_neg = (Pdgfra_pos_ASPA_neg / Total_cells) * 100,
-    prop_Pdgfra_neg_ASPA_pos = (Pdgfra_neg_ASPA_pos / Total_cells) * 100,
-    prop_Pdgfra_neg_ASPA_neg = (Pdgfra_neg_ASPA_neg / Total_cells) * 100,
-    Area = (max_value/879.1)*(500/879.1),
-    Pdgfra_per_area = Pdgfra/Area,
-    ASPA_per_area = ASPA/Area,
+    Area = (max_value / 879.1) * (500 / 879.1),
+    Pdgfra_per_area = total_Pdgfra / Area,
+    ASPA_per_area = total_ASPA / Area,
     Pdgfra_pos_ASPA_pos_per_area = Pdgfra_pos_ASPA_pos / Area,
     Pdgfra_pos_ASPA_neg_per_area = Pdgfra_pos_ASPA_neg / Area,
     Pdgfra_neg_ASPA_pos_per_area = Pdgfra_neg_ASPA_pos / Area,
@@ -295,7 +325,49 @@ summary_combined_detections_ASPAPdgra <- combined_detections_ASPAPdgra %>%
     Olig2_per_area = Total_cells / Area
   )
 
+# optionally write to CSV
+write.csv(imageframe_combined_detections_ASPAPdgra, "imageframe_combined_detections_ASPAPdgra.csv", row.names = FALSE)
+
+# Remove any images with all zeros if desired
+imageframe_combined_detections_ASPAPdgra <- imageframe_combined_detections_ASPAPdgra %>%
+  filter(!(Pdgfra_pos_ASPA_pos == 0 &
+           Pdgfra_pos_ASPA_neg == 0 &
+           Pdgfra_neg_ASPA_pos == 0 &
+           Pdgfra_neg_ASPA_neg == 0))
+
 ```
+```{r}
+animal_frame_ASPAPdgra <- imageframe_combined_detections_ASPAPdgra %>%
+  group_by(Animal, Genotype) %>%
+  summarise(
+    n_images = n(),
+    mean_olig2 = mean(Total_cells, na.rm = TRUE),
+    mean_olig2_per_area = mean(Olig2_per_area, na.rm = TRUE),
+    mean_ASPA = mean(total_ASPA, na.rm = TRUE),
+    mean_ASPA_per_area = mean(ASPA_per_area, na.rm = TRUE),
+    mean_Pdgfra = mean(total_Pdgfra, na.rm = TRUE),
+    mean_Pdgfra_per_area = mean(Pdgfra_per_area, na.rm = TRUE),
+    total_ASPA = sum(total_ASPA, na.rm = TRUE),
+    total_Pdgfra = sum(total_Pdgfra, na.rm = TRUE),
+    total_Pdgfra_pos_ASPA_pos = sum(Pdgfra_pos_ASPA_pos, na.rm = TRUE),
+    total_Pdgfra_pos_ASPA_neg = sum(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
+    total_Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
+    total_Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE),
+    mean_Pdgfra_pos_ASPA_pos = mean(Pdgfra_pos_ASPA_pos, na.rm = TRUE),
+    mean_Pdgfra_pos_ASPA_neg = mean(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
+    mean_Pdgfra_neg_ASPA_pos = mean(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
+    mean_Pdgfra_neg_ASPA_neg = mean(Pdgfra_neg_ASPA_neg, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# remove animals with all zeros if needed
+animal_frame_ASPAPdgra <- animal_frame_ASPAPdgra %>%
+  filter(!(total_Pdgfra_pos_ASPA_pos == 0 &
+           total_Pdgfra_pos_ASPA_neg == 0 &
+           total_Pdgfra_neg_ASPA_pos == 0 &
+           total_Pdgfra_neg_ASPA_neg == 0))
+```
+
 
 ```{r}
 #T-Tests on Individual Cell Counts/Area
@@ -487,7 +559,7 @@ combined_detections_ASPA_Pdgfrabinned_counts_animal_summary$Genotype <- factor(c
 
 # Create ggplot with lines and shaded error regions
 P_neg_A_neg_binned_density_plot <- # Create the plot
-ggplot(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary, aes(x = bin, y = mean_P_neg_A_pos, color = Genotype, group = Genotype)) +
+ggplot(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary, aes(x = bin, y = mean_P_neg_A_neg, color = Genotype, group = Genotype)) +
   geom_line(size = 1) +  # Line plot for mean Cell.Counts
   geom_point(size = 3, alpha = 0.5) +
   geom_ribbon(aes(ymin = mean_P_neg_A_neg - se_P_neg_A_neg, ymax = mean_P_neg_A_neg + se_P_neg_A_neg, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
@@ -502,7 +574,6 @@ ggplot(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary, aes(x = bin,
   scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
   theme(legend.position = "bottom")  # Optional: Adjust legend position
 png(filename = "p30_Ctnnd2_lineplot_P_neg_A_neg_counts_binned.png", width = 1200, height = 850, res = 300)
-P_neg_A_neg_binned_density_plot
   dev.off()
 P_neg_A_neg_binned_density_plot
 ```
@@ -511,6 +582,9 @@ P_neg_A_neg_binned_density_plot
 ```{r}
 # Posthoc testing for P_pos_A_neg
 library(car)
+
+leastsquare <- lsmeans(PposAneg, pairwise ~ Genotype, adjust = "tukey")
+summary(leastsquare$contrasts)
 
 leastsquare <- lsmeans(PposAneg, pairwise ~ Genotype | bin, adjust = "tukey")
 summary(leastsquare$contrasts)
@@ -562,6 +636,8 @@ leastsquare <- lsmeans(PnegApos, pairwise ~ Genotype | bin, adjust = "tukey")
 summary(leastsquare$contrasts)
 ```
 
+
+
 ```{r}
 # Plot binned results to check if stats make sense
 # P_neg_A_pos line plot
@@ -601,6 +677,11 @@ PnegApos_binned_density_plot
 ```
 
 ```{r}
+Imageframe_data <- read.csv("imageframe_combined_detections_ASPAPdgra.csv")
+
+
+summary_combined_detections_ASPAPdgra$Genotype <- factor(summary_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
+
 summary_combined_detections_ASPAPdgra <- summary_combined_detections_ASPAPdgra %>%
   rename(ASPA_per_area = `ASPA_per_area`)
 
@@ -622,13 +703,13 @@ ggplot(summary_combined_detections_ASPAPdgra, aes(x = Genotype, y = ASPA_per_are
     inherit.aes = FALSE
   ) +
   geom_jitter(aes(color = Genotype), width = 0.2, size = 2, alpha = 0.9) +
+  geom_jitter (data = Imageframe_data, aes(color = Genotype, y = ASPA_per_area), width = 0.2, size = 2, alpha = 0.2) +
   theme_minimal() +
   xlab("") +
-  ylab("Proportion ASPA+ Cells") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none") +
-  scale_fill_manual(values = c("darkblue", "lightblue")) +
-  scale_color_manual(values = c("darkblue", "lightblue"))
+  ylab("Proportion ASPA+ Cells / "~ mm^2) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_color_manual(values = c("dodgerblue", "firebrick1"))
 ```
 
 ```{r}
