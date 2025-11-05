@@ -377,6 +377,7 @@ animal_frame_ASPAPdgra <- animal_frame_ASPAPdgra %>%
            total_Pdgfra_pos_ASPA_neg == 0 &
            total_Pdgfra_neg_ASPA_pos == 0 &
            total_Pdgfra_neg_ASPA_neg == 0))
+write.csv(animal_frame_ASPAPdgfra, "animal_frame_ASPAPdgfra.csv", row.names = FALSE)
 ```
 
 
