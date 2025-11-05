@@ -734,7 +734,7 @@ summary_stats <- animal_frame_ASPAPdgra %>%
     .groups = 'drop'
   )
 
-ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_ASPA_per_area)) +
+ASPA_plot <- ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_ASPA_per_area)) +
   geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
   geom_errorbar(
     data = summary_stats,
@@ -751,6 +751,9 @@ ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_ASPA_per_area)
   theme(legend.position = "none") +
   scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
   scale_color_manual(values = c("dodgerblue", "firebrick1"))
+
+ggsave("ASPA_density.png", plot = ASPA_plot,
+       width = 2, height = 4, dpi = 300)
 ```
 
 ```{r}
@@ -769,7 +772,7 @@ summary_stats <- animal_frame_ASPAPdgra %>%
     .groups = 'drop'
   )
 
-ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_Pdgfra_per_area)) +
+Pdgfra_plot <- ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_Pdgfra_per_area)) +
   geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
   geom_errorbar(
     data = summary_stats,
@@ -786,6 +789,9 @@ ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_Pdgfra_per_are
   theme(legend.position = "none") +
   scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
   scale_color_manual(values = c("dodgerblue", "firebrick1"))
+
+ggsave("Pdgfra_density.png", plot = Pdgfra_plot,
+       width = 2, height = 4, dpi = 300)
 ```
 ```{r}
 Imageframe_data <- read.csv("imageframe_combined_detections_ASPAPdgra.csv")
@@ -803,7 +809,7 @@ summary_stats <- animal_frame_ASPAPdgra %>%
     .groups = 'drop'
   )
 
-ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_olig2_per_area)) +
+Olig2_plot <- ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_olig2_per_area)) +
   geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
   geom_errorbar(
     data = summary_stats,
@@ -820,5 +826,8 @@ ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_olig2_per_area
   theme(legend.position = "none") +
   scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
   scale_color_manual(values = c("dodgerblue", "firebrick1"))
+
+ggsave("Olig2_density.png", plot = Olig2_plot,
+       width = 2, height = 4, dpi = 300)
 ```
 
