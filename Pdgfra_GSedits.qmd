@@ -361,6 +361,10 @@ animal_frame_ASPAPdgfra <- imageframe_combined_detections_ASPAPdgra %>%
     mean_Pdgfra_pos_ASPA_neg = mean(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
     mean_Pdgfra_neg_ASPA_pos = mean(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
     mean_Pdgfra_neg_ASPA_neg = mean(Pdgfra_neg_ASPA_neg, na.rm = TRUE),
+    mean_Pdgfra_pos_ASPA_pos_per_area = mean(Pdgfra_pos_ASPA_pos_per_area, na.rm = TRUE),
+    mean_Pdgfra_pos_ASPA_neg_per_area = mean(Pdgfra_pos_ASPA_neg_per_area, na.rm = TRUE),
+    mean_Pdgfra_neg_ASPA_pos_per_area = mean(Pdgfra_neg_ASPA_pos_per_area, na.rm = TRUE),
+    mean_Pdgfra_neg_ASPA_neg_per_area = mean(Pdgfra_neg_ASPA_neg_per_area, na.rm = TRUE),
     total_area = sum(Area, na.rm = TRUE),  # total area across all images
     .groups = "drop"
   ) %>%
@@ -368,7 +372,11 @@ animal_frame_ASPAPdgfra <- imageframe_combined_detections_ASPAPdgra %>%
     # per-animal densities (weighted by total area)
     olig2_per_area = total_Olig2 / total_area,
     aspa_per_area = total_ASPA / total_area,
-    pdgfra_per_area = total_Pdgfra / total_area
+    pdgfra_per_area = total_Pdgfra / total_area,
+    pdgfra_pos_aspa_pos_per_area = total_Pdgfra_pos_ASPA_pos / total_area,
+    pdgfra_pos_aspa_neg_per_area = total_Pdgfra_pos_ASPA_neg / total_area,
+    pdgfra_neg_aspa_pos_per_area = total_Pdgfra_neg_ASPA_pos / total_area,
+    pdgfra_neg_aspa_neg_per_area = total_Pdgfra_neg_ASPA_neg / total_area
   )
 
 # remove animals with all zeros if needed
@@ -382,7 +390,7 @@ write.csv(animal_frame_ASPAPdgfra, "animal_frame_ASPAPdgfra.csv", row.names = FA
 
 
 ```{r}
-#T-Tests on Individual Cell Counts/Area
+#T-Tests on Individual Cell Counts/Area (TOTAL)
 
 #t-test on Olig2/area
 t.test(olig2_per_area ~ Genotype, data = animal_frame_ASPAPdgra)
@@ -395,14 +403,36 @@ t.test(aspa_per_area ~ Genotype, data = animal_frame_ASPAPdgra)
 t.test(pdgfra_per_area ~ Genotype, data = animal_frame_ASPAPdgra)
 
 ```
+```{r}
+#T-Tests on Individual Cell Counts/Area (MEAN)
+
+#t-test on Olig2/area
+t.test(mean_olig2_per_area ~ Genotype, data = animal_frame_ASPAPdgra)
+
+#t-test on ASPA+/area
+t.test(mean_ASPA_per_area ~ Genotype, data = animal_frame_ASPAPdgra)
+
+#Pdgfra
+
+t.test(mean_Pdgfra_per_area ~ Genotype, data = animal_frame_ASPAPdgra)
+```
+
 
 ```{r}
-#T-Tests on Combined Cell ID Counts/Area
+#T-Tests on Combined Cell ID Counts/Area (TOTAL)
 
-t.test(Pdgfra_pos_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
-t.test(Pdgfra_pos_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
-t.test(Pdgfra_neg_ASPA_pos_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
-t.test(Pdgfra_neg_ASPA_neg_per_area ~ Genotype, data = summary_combined_detections_ASPAPdgra)
+t.test(pdgfra_pos_aspa_pos_per_area ~ Genotype, data = animal_frame_ASPAPdgfra)
+t.test(pdgfra_pos_aspa_neg_per_area ~ Genotype, data = animal_frame_ASPAPdgfra)
+t.test(pdgfra_neg_aspa_pos_per_area ~ Genotype, data = animal_frame_ASPAPdgfra)
+t.test(pdgfra_neg_aspa_neg_per_area ~ Genotype, data = animal_frame_ASPAPdgfra)
+```
+```{r}
+#T-Tests on Combined Cell ID Counts/Area (MEAN)
+
+t.test(mean_Pdgfra_pos_ASPA_pos_per_area ~ Genotype, data = animal_frame_ASPAPdgfra)
+t.test(mean_Pdgfra_pos_ASPA_neg_per_area ~ Genotype, data = animal_frame_ASPAPdgfra)
+t.test(mean_Pdgfra_neg_ASPA_pos_per_area ~ Genotype, data = animal_frame_ASPAPdgfra)
+t.test(mean_Pdgfra_neg_ASPA_neg_per_area ~ Genotype, data = animal_frame_ASPAPdgfra)
 ```
 
 ```{r}
@@ -626,7 +656,7 @@ ggplot(combined_detections_ASPA_Pdgfrabinned_counts_summary, aes(x = bin, y = me
   geom_point(size = 3, alpha = 0.5) +
   geom_ribbon(aes(ymin = mean_P_pos_A_neg - se_P_pos_A_neg, ymax = mean_P_pos_A_neg + se_P_pos_A_neg, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
   labs(
-    title = "OPC counts by Distance from Pia",
+    #title = "OPC counts by Distance from Pia",
     x = "Cortical bin (distance from Pia)",
     y = "PDGFRa+/ASPA- cell density",
     color = "Genotype",
@@ -717,25 +747,29 @@ ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_ASPA_per_area)
   geom_jitter (data = imageframe_combined_detections_ASPAPdgra, aes(color = Genotype, y = ASPA_per_area), width = 0.2, size = 2, alpha = 0.2) +
   theme_minimal() +
   xlab("") +
-  ylab("Proportion ASPA+ Cells / "~ mm^2) +
+  ylab("Mean ASPA+ Cells / "~ mm^2) +
   theme(legend.position = "none") +
   scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
   scale_color_manual(values = c("dodgerblue", "firebrick1"))
 ```
 
 ```{r}
-combined_ASPAPdgra_clean <- combined_ASPAPdgra_clean %>%
-  rename(Pdgfra_total = `Pdgfra/total`)
+Imageframe_data <- read.csv("imageframe_combined_detections_ASPAPdgra.csv")
 
-summary_stats <- combined_ASPAPdgra_clean %>%
+
+animal_frame_ASPAPdgfra$Genotype <- factor(animal_frame_ASPAPdgra$Genotype, levels = c("WT", "KO"))
+imageframe_combined_detections_ASPAPdgfra <- factor(imageframe_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
+
+
+summary_stats <- animal_frame_ASPAPdgra %>%
   group_by(Genotype) %>%
   summarise(
-    MeanCount = mean(Pdgfra_total, na.rm = TRUE),
-    SEM = sd(Pdgfra_total, na.rm = TRUE)/sqrt(n()),
+    MeanCount = mean(mean_Pdgfra_per_area, na.rm = TRUE),
+    SEM = sd(mean_Pdgfra_per_area, na.rm = TRUE)/sqrt(n()),
     .groups = 'drop'
   )
 
-ggplot(combined_ASPAPdgra_clean, aes(x = Genotype, y = Pdgfra_total)) +
+ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_Pdgfra_per_area)) +
   geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
   geom_errorbar(
     data = summary_stats,
@@ -744,12 +778,47 @@ ggplot(combined_ASPAPdgra_clean, aes(x = Genotype, y = Pdgfra_total)) +
     color = "black",
     inherit.aes = FALSE
   ) +
-  geom_jitter(aes(color = Genotype), width = 0.2, size = 2, alpha = 0.9) +
+  geom_jitter(data = animal_frame_ASPAPdgfra, aes(color = Genotype, y = mean_Pdgfra_per_area), width = 0.2, size = 2, alpha = 0.9) +
+  geom_jitter (data = imageframe_combined_detections_ASPAPdgra, aes(color = Genotype, y = Pdgfra_per_area), width = 0.2, size = 2, alpha = 0.2) +
   theme_minimal() +
   xlab("") +
-  ylab("Proportion Pdgfra+ Cells") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none") +
-  scale_fill_manual(values = c("darkblue", "lightblue")) +
-  scale_color_manual(values = c("darkblue", "lightblue"))
+  ylab("Mean Pdgfra+ Cells / "~ mm^2) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_color_manual(values = c("dodgerblue", "firebrick1"))
 ```
+```{r}
+Imageframe_data <- read.csv("imageframe_combined_detections_ASPAPdgra.csv")
+
+
+animal_frame_ASPAPdgfra$Genotype <- factor(animal_frame_ASPAPdgra$Genotype, levels = c("WT", "KO"))
+imageframe_combined_detections_ASPAPdgfra <- factor(imageframe_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
+
+
+summary_stats <- animal_frame_ASPAPdgra %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(mean_olig2_per_area, na.rm = TRUE),
+    SEM = sd(mean_olig2_per_area, na.rm = TRUE)/sqrt(n()),
+    .groups = 'drop'
+  )
+
+ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_olig2_per_area)) +
+  geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(data = animal_frame_ASPAPdgfra, aes(color = Genotype, y = mean_olig2_per_area), width = 0.2, size = 2, alpha = 0.9) +
+  geom_jitter (data = imageframe_combined_detections_ASPAPdgra, aes(color = Genotype, y = Olig2_per_area), width = 0.2, size = 2, alpha = 0.2) +
+  theme_minimal() +
+  xlab("") +
+  ylab("Mean Olig2+ Cells / "~ mm^2) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_color_manual(values = c("dodgerblue", "firebrick1"))
+```
+
