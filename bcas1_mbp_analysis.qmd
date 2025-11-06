@@ -3,6 +3,59 @@ title: "bcas1_mbp_analysis"
 format: html
 ---
 
+
+
+```{r}
+#packages
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(multcompView)){install.packages("multcompView")}
+if(!require(dplyr)){install.packages("dplyr")}
+if(!require(rcompanion)){install.packages("rcompanion")}
+if(!require(rcompanion)){install.packages("ggprism")}
+
+library(tidyverse)
+library(stringr)
+library(car)
+library(FSA)
+library(ggpubr)
+library(ggbeeswarm)
+library(ggprism)
+library(ragg)
+
+if(!require(psych)){install.packages("psych")}
+if(!require(FSA)){install.packages("FSA")}
+if(!require(lattice)){install.packages("lattice")}
+if(!require(lsr)){install.packages("lsr")} 
+```
+```{r}
+
+#reading in csv files and cleaning
+
+#Section Data
+Section_data <- read.csv("DATA/merged_data_section.csv")
+
+Section_data <- Section_data %>%
+  extract(
+    Image.Name,
+    into = c("Animal", "Sex", "Genotype", "slice", "hemisphere"),
+    regex = "^([0-9]{6})_([FM])_([A-Z]{2})_s([0-9]+)h([0-9]+)$",
+    remove = FALSE
+  )
+
+
+#Cell Data
+Detections_data <- read.csv("DATA/merged_data_cell.csv")
+
+Detections_data <- Detections_data %>%
+  extract(
+    Image.Name,
+    into = c("Animal", "Sex", "Genotype", "slice", "hemisphere"),
+    regex = "^([0-9]{6})_([FM])_([A-Z]{2})_s([0-9]+)h([0-9]+)$",
+    remove = FALSE
+  )
+
+```
+
 ```{r}
 
 ```
