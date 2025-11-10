@@ -217,3 +217,198 @@ combined_detections_BCas1MBPbinned_counts_animal$bin <- as.factor(combined_detec
 print(combined_detections_BCas1MBPbinned_counts_animal)
 ```
 
+```{r}
+Bcas1_pos = lm(Bcas1_pos ~ bin * Genotype,
+           data = combined_detections_BCas1MBPbinned_counts_animal)
+summary(Bcas1_pos)
+Anova(Bcas1_pos, type = "II")
+```
+```{r}
+library(plotrix)
+#line plot for Bcas+ Counts
+combined_detections_BCas1MBPbinned_counts_animal_summary <- combined_detections_BCas1MBPbinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_Bcas1_pos = mean(Bcas1_pos),
+    se_Bcas1_pos = std.error(Bcas1_pos),
+    .groups = "drop"
+  )
+#reorder so WT is listed first in legend
+combined_detections_BCas1MBPbinned_counts_animal_summary$Genotype <- factor(combined_detections_BCas1MBPbinned_counts_animal_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+Bcas1_pos_binned_density_plot <- # Create the plot
+ggplot(combined_detections_BCas1MBPbinned_counts_animal_summary, aes(x = bin, y = mean_Bcas1_pos, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_Bcas1_pos - se_Bcas1_pos, ymax = mean_Bcas1_pos + se_Bcas1_pos, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    x = "Distance from Pia (% total cortical thickness)",
+    y = expression("cells / " ~ mm^2),
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+png(filename = "p30_Ctnnd2_lineplot_Bcas1_pos_counts_binned.png", width = 1200, height = 850, res = 300)
+  Bcas1_pos_binned_density_plot
+  dev.off()
+Bcas1_pos_binned_density_plot
+```
+```{r}
+Bcas1_pos_MBP_pos = lm(Bcas1_pos_MBP_pos ~ bin * Genotype,
+           data = combined_detections_BCas1MBPbinned_counts_animal)
+summary(Bcas1_pos_MBP_pos)
+Anova(Bcas1_pos_MBP_pos, type = "II")
+```
+```{r}
+library(plotrix)
+#line plot for Bcas+ Counts
+combined_detections_BCas1MBPbinned_counts_animal_summary <- combined_detections_BCas1MBPbinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_Bcas1_pos_MBP_pos = mean(Bcas1_pos_MBP_pos),
+    se_Bcas1_pos_MBP_pos = std.error(Bcas1_pos_MBP_pos),
+    .groups = "drop"
+  )
+#reorder so WT is listed first in legend
+combined_detections_BCas1MBPbinned_counts_animal_summary$Genotype <- factor(combined_detections_BCas1MBPbinned_counts_animal_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+Bcas1_pos_MBP_pos_binned_density_plot <- # Create the plot
+ggplot(combined_detections_BCas1MBPbinned_counts_animal_summary, aes(x = bin, y = mean_Bcas1_pos_MBP_pos, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_Bcas1_pos_MBP_pos - se_Bcas1_pos_MBP_pos, ymax = mean_Bcas1_pos_MBP_pos + se_Bcas1_pos_MBP_pos, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    x = "Distance from Pia (% total cortical thickness)",
+    y = expression("cells / " ~ mm^2),
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+png(filename = "p30_Ctnnd2_lineplot_Bcas1_pos_MBP_pos_counts_binned.png", width = 1200, height = 850, res = 300)
+  Bcas1_pos_MBP_pos_binned_density_plot
+  dev.off()
+Bcas1_pos_MBP_pos_binned_density_plot
+```
+```{r}
+Imageframe_data <- read.csv("imageframe_combined_detections_Bcas1MBP.csv")
+
+
+animal_frame_BCas1MBP$Genotype <- factor(animal_frame_BCas1MBP$Genotype, levels = c("WT", "KO"))
+imageframe_BCas1MBP$Genotype <- factor(imageframe_BCas1MBP$Genotype, levels = c("WT", "KO"))
+
+
+summary_stats <- animal_frame_BCas1MBP %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(mean_olig2_per_area, na.rm = TRUE),
+    SEM = sd(mean_olig2_per_area, na.rm = TRUE)/sqrt(n()),
+    .groups = 'drop'
+  )
+
+Olig2_Bcas1MBP_plot <- ggplot(data = animal_frame_BCas1MBP, aes(x = Genotype, y = mean_olig2_per_area)) +
+  geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(data = animal_frame_BCas1MBP, aes(color = Genotype, y = mean_olig2_per_area), width = 0.2, size = 2, alpha = 0.9) +
+  geom_jitter (data = imageframe_BCas1MBP, aes(color = Genotype, y = Olig2_per_area), width = 0.2, size = 2, alpha = 0.2) +
+  theme_minimal() +
+  xlab("") +
+  ylab("Mean Olig2+ Cells / "~ mm^2) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_color_manual(values = c("dodgerblue", "firebrick1"))
+
+ggsave("Olig2_Bcas1MBP_density.png", plot = Olig2_Bcas1MBP_plot,
+       width = 2, height = 4, dpi = 300)
+Olig2_Bcas1MBP_plot
+```
+```{r}
+Imageframe_data <- read.csv("imageframe_combined_detections_Bcas1MBP.csv")
+
+
+animal_frame_BCas1MBP$Genotype <- factor(animal_frame_BCas1MBP$Genotype, levels = c("WT", "KO"))
+imageframe_BCas1MBP$Genotype <- factor(imageframe_BCas1MBP$Genotype, levels = c("WT", "KO"))
+
+
+summary_stats <- animal_frame_BCas1MBP %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(mean_Bcas1_per_area, na.rm = TRUE),
+    SEM = sd(mean_Bcas1_per_area, na.rm = TRUE)/sqrt(n()),
+    .groups = 'drop'
+  )
+
+Bcas1_Bcas1MBP_plot <- ggplot(data = animal_frame_BCas1MBP, aes(x = Genotype, y = mean_Bcas1_per_area)) +
+  geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(data = animal_frame_BCas1MBP, aes(color = Genotype, y = mean_Bcas1_per_area), width = 0.2, size = 2, alpha = 0.9) +
+  geom_jitter (data = imageframe_BCas1MBP, aes(color = Genotype, y = Bcas1_per_area), width = 0.2, size = 2, alpha = 0.2) +
+  theme_minimal() +
+  xlab("") +
+  ylab("Mean Bcas1+ Cells / "~ mm^2) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_color_manual(values = c("dodgerblue", "firebrick1"))
+
+ggsave("Bcas1_Bcas1MBP_density.png", plot = Bcas1_Bcas1MBP_plot,
+       width = 2, height = 4, dpi = 300)
+Bcas1_Bcas1MBP_plot
+```
+```{r}
+Imageframe_data <- read.csv("imageframe_combined_detections_Bcas1MBP.csv")
+
+
+animal_frame_BCas1MBP$Genotype <- factor(animal_frame_BCas1MBP$Genotype, levels = c("WT", "KO"))
+imageframe_BCas1MBP$Genotype <- factor(imageframe_BCas1MBP$Genotype, levels = c("WT", "KO"))
+
+
+summary_stats <- animal_frame_BCas1MBP %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(mean_BCas1MBP_per_area, na.rm = TRUE),
+    SEM = sd(mean_BCas1MBP_per_area, na.rm = TRUE)/sqrt(n()),
+    .groups = 'drop'
+  )
+
+Bcas1MBP_Bcas1MBP_plot <- ggplot(data = animal_frame_BCas1MBP, aes(x = Genotype, y = mean_BCas1MBP_per_area)) +
+  geom_col(data = summary_stats, aes(y = MeanCount, fill = Genotype), alpha = 0.4) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(data = animal_frame_BCas1MBP, aes(color = Genotype, y = mean_BCas1MBP_per_area), width = 0.2, size = 2, alpha = 0.9) +
+  geom_jitter (data = imageframe_BCas1MBP, aes(color = Genotype, y = Bcas1MBP_per_area), width = 0.2, size = 2, alpha = 0.2) +
+  theme_minimal() +
+  xlab("") +
+  ylab("Mean Bcas1+, MBP+ Cells / "~ mm^2) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_color_manual(values = c("dodgerblue", "firebrick1"))
+
+ggsave("Bcas1MBP_Bcas1MBP_density.png", plot = Bcas1MBP_Bcas1MBP_plot,
+       width = 2, height = 4, dpi = 300)
+Bcas1MBP_Bcas1MBP_plot
+```
+
