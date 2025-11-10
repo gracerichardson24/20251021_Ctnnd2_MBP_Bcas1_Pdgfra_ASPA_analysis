@@ -47,16 +47,173 @@ Section_data <- Section_data %>%
 Detections_data <- read.csv("DATA/merged_data_cell.csv")
 
 Detections_data <- Detections_data %>%
+  mutate(
+    # Remove optional 'csv' suffix
+    Image.Name = str_remove(Image.Name, "csv$"),
+    # Extract components with regex
+    Animal      = str_extract(Image.Name, "^[0-9]+"),
+    Sex         = str_extract(Image.Name, "_[FM]_") %>% str_remove_all("_"),
+    Genotype    = str_extract(Image.Name, "_(WT|KO)_") %>% str_remove_all("_"),
+    slice       = str_extract(Image.Name, "s[0-9]+") %>% str_remove("s"),
+    hemisphere  = str_extract(Image.Name, "h[0-9]+") %>% str_remove("h")
+  )
+
+Height_data <- read.csv("DATA/heights_widths.csv")
+
+Height_data <- Height_data %>%
   extract(
-    Image.Name,
+    Image,
     into = c("Animal", "Sex", "Genotype", "slice", "hemisphere"),
-    regex = "^([0-9]{6})_([FM])_([A-Z]{2})_s([0-9]+)h([0-9]+)$",
+    # Look for pattern near the end of the filename
+    regex = "([0-9]{6})_([FM])_([A-Z]{2})_s([0-9]+)h([0-9]+)",
     remove = FALSE
   )
+
+
+```
+
+```{r}
+Section_data_height <- full_join(
+  Section_data,
+  Height_data,
+  by = c("Animal", "Sex", "Genotype", "slice", "hemisphere")
+)
+
+Detections_data_height <- full_join(
+  Detections_data,
+  Height_data,
+  by = c("Animal", "Sex", "Genotype", "slice", "hemisphere")
+)
+
+Detections_data_height$Bcas1 <- ifelse(Detections_data_height$Type == 1, 1, 0)
+Detections_data_height$Bcas1.MBP <- ifelse(Detections_data_height$Type == 2, 1, 0)
 
 ```
 
 ```{r}
 
+imageframe_BCas1MBP <- Detections_data_height %>%
+  group_by(Animal, Genotype, hemisphere, slice) %>%  # <— each unique combo = one image
+  summarise(
+    Total_cells = n(),
+    total_Bcas1 = sum(Bcas1, na.rm = TRUE),
+    total_Bcas1MBP = sum(Bcas1.MBP, na.rm = TRUE),
+    max_value = max(`Y`, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    # calculate image area (in mm²) from your scaling constants
+    Area = (max_value / 879.1) * (500 / 879.1),
+    # convert to densities
+    Bcas1_per_area = total_Bcas1 / Area,
+    Bcas1MBP_per_area = total_Bcas1MBP / Area,
+    Olig2_per_area = Total_cells / Area
+  )
+
+# optionally write to CSV
+write.csv(imageframe_BCas1MBP, "imageframe_combined_detections_Bcas1MBP.csv", row.names = FALSE)
+
+
+```
+```{r}
+animal_frame_BCas1MBP <- imageframe_BCas1MBP %>%
+  group_by(Animal, Genotype) %>%
+  summarise(
+    n_images = n(),
+    # totals across all images
+    total_Olig2 = sum(Total_cells, na.rm = TRUE),
+    total_Bcas1_count = sum(total_Bcas1, na.rm = TRUE),
+    total_Bcas1MBP_count = sum(total_Bcas1MBP, na.rm = TRUE),
+    # averages across images (for per-image statistics)
+    mean_olig2 = mean(Total_cells, na.rm = TRUE),
+    mean_olig2_per_area = mean(Olig2_per_area, na.rm = TRUE),
+    mean_Bcas1 = mean(total_Bcas1, na.rm = TRUE),
+    mean_Bcas1_per_area = mean(Bcas1_per_area, na.rm = TRUE),
+    mean_BCas1MBP = mean(total_Bcas1MBP, na.rm = TRUE),
+    mean_BCas1MBP_per_area = mean(Bcas1MBP_per_area, na.rm = TRUE),
+    total_area = sum(Area, na.rm = TRUE),  # total area across all images
+    .groups = "drop"
+  ) %>%
+  mutate(
+    # per-animal densities (weighted by total area)
+    olig2_per_area = total_Olig2 / total_area,
+    Bcas1_per_area = total_Bcas1_count / total_area,
+    Bcas1MBP_per_area = total_Bcas1MBP_count / total_area
+  )
+```
+
+```{r}
+#BINNED ANALYSIS MODIFIED FROM GABI
+
+#obtaining maximum Y value for each image and normalizing their Y values to that to create and sort cells into 10 equal bins 
+combined_detections_BCas1MBPbinned <- Detections_data_height %>%
+  group_by(Image) %>%
+  mutate(
+    Y_max = max(`Y`, na.rm = TRUE),
+    Y_norm = `Y` / Y_max,
+    bin = 10 * round(Y_norm + 0.05, digits = 1)
+  ) %>%
+  ungroup()
+
+# Assume df has columns: Image, Class
+
+# First, get unique image IDs
+unique_images <- unique(combined_detections_BCas1MBPbinned$Image)
+# Initialize empty results data frame
+combined_detections_BCas1MBPbinned_counts <- data.frame(
+  Image = character(),
+  bin = integer(),
+  Animal = character(),
+  Genotype = character(),
+  Bcas1 = numeric(),
+  Bcas1.MBP = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through images and bins
+unique_images <- unique(combined_detections_BCas1MBPbinned$Image)
+
+for (img in unique_images) {
+  for (b in 1:10) {
+    temp <- combined_detections_BCas1MBPbinned %>%
+      filter(Image == img, bin == b)
+    
+    if (nrow(temp) == 0) next
+    
+    area_mm2 <- ((temp$Y_max[1] / 10) / 879.1) * (500 / 879.1)
+    
+    Bcas1_pos <- sum(temp$Bcas1 == "1") / area_mm2
+    Bcas1_pos_MBP_pos <- sum(temp$Bcas1.MBP == "1") / area_mm2
+    
+    combined_detections_BCas1MBPbinned_counts <- rbind(
+      combined_detections_BCas1MBPbinned_counts,
+      data.frame(
+        Image = img,
+        bin = b,
+        Animal = unique(temp$Animal),
+        Genotype = unique(temp$Genotype),
+        Bcas1_pos = Bcas1_pos,
+        Bcas1_pos_MBP_pos = Bcas1_pos_MBP_pos
+      )
+    )
+  }
+}
+
+
+# View result
+print(combined_detections_BCas1MBPbinned_counts)
+```
+
+```{r}
+combined_detections_BCas1MBPbinned_counts_animal <- combined_detections_BCas1MBPbinned_counts %>%
+  group_by(Genotype, Animal, bin) %>%
+  summarise(Bcas1_pos = mean(Bcas1_pos),
+            Bcas1_pos_MBP_pos = mean(Bcas1_pos_MBP_pos),
+            .groups = "drop")
+
+# make 'bin' a factor so all 10 values are evaluated separately
+combined_detections_BCas1MBPbinned_counts_animal$bin <- as.factor(combined_detections_BCas1MBPbinned_counts_animal$bin)
+
+print(combined_detections_BCas1MBPbinned_counts_animal)
 ```
 
