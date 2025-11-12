@@ -167,6 +167,7 @@ combined_detections_BCas1MBPbinned_counts <- data.frame(
   Genotype = character(),
   Bcas1 = numeric(),
   Bcas1.MBP = numeric(),
+  Olig2 = numeric(),
   stringsAsFactors = FALSE
 )
 
@@ -182,9 +183,16 @@ for (img in unique_images) {
     
     area_mm2 <- ((temp$Y_max[1] / 10) / 879.1) * (500 / 879.1)
     
-    Bcas1_pos <- sum(temp$Bcas1 == "1") / area_mm2
-    Bcas1_pos_MBP_pos <- sum(temp$Bcas1.MBP == "1") / area_mm2
+   Bcas1_count <- sum(temp$Bcas1 == "1")
+    Bcas1_MBP_count <- sum(temp$Bcas1.MBP == "1")
+    Olig2_count <- Bcas1_count + Bcas1_MBP_count  # sum of raw counts
     
+    # Convert to densities (counts per mm²)
+    Bcas1_density <- Bcas1_count / area_mm2
+    Bcas1_MBP_density <- Bcas1_MBP_count / area_mm2
+    Olig2_density <- Olig2_count / area_mm2
+    
+    # Add results
     combined_detections_BCas1MBPbinned_counts <- rbind(
       combined_detections_BCas1MBPbinned_counts,
       data.frame(
@@ -192,8 +200,9 @@ for (img in unique_images) {
         bin = b,
         Animal = unique(temp$Animal),
         Genotype = unique(temp$Genotype),
-        Bcas1_pos = Bcas1_pos,
-        Bcas1_pos_MBP_pos = Bcas1_pos_MBP_pos
+        Bcas1_pos = Bcas1_density,
+        Bcas1_pos_MBP_pos = Bcas1_MBP_density,
+        Olig2 = Olig2_density
       )
     )
   }
@@ -209,6 +218,7 @@ combined_detections_BCas1MBPbinned_counts_animal <- combined_detections_BCas1MBP
   group_by(Genotype, Animal, bin) %>%
   summarise(Bcas1_pos = mean(Bcas1_pos),
             Bcas1_pos_MBP_pos = mean(Bcas1_pos_MBP_pos),
+            Olig2 = mean(Olig2),
             .groups = "drop")
 
 # make 'bin' a factor so all 10 values are evaluated separately
@@ -216,6 +226,48 @@ combined_detections_BCas1MBPbinned_counts_animal$bin <- as.factor(combined_detec
 
 print(combined_detections_BCas1MBPbinned_counts_animal)
 ```
+
+```{r}
+Olig2 = lm(Olig2 ~ bin * Genotype,
+           data = combined_detections_BCas1MBPbinned_counts_animal)
+summary(Olig2)
+Anova(Olig2, type = "II")
+```
+```{r}
+library(plotrix)
+#line plot for Bcas+ Counts
+combined_detections_BCas1MBPbinned_counts_animal_summary <- combined_detections_BCas1MBPbinned_counts_animal %>%
+  group_by(bin, Genotype) %>%
+  summarise(
+    mean_Olig2 = mean(Olig2),
+    se_Olig2 = std.error(Olig2),
+    .groups = "drop"
+  )
+#reorder so WT is listed first in legend
+combined_detections_BCas1MBPbinned_counts_animal_summary$Genotype <- factor(combined_detections_BCas1MBPbinned_counts_animal_summary$Genotype, levels = c("WT", "KO"))
+
+# Create ggplot with lines and shaded error regions
+Olig2_binned_density_plot <- # Create the plot
+ggplot(combined_detections_BCas1MBPbinned_counts_animal_summary, aes(x = bin, y = mean_Olig2, color = Genotype, group = Genotype)) +
+  geom_line(size = 1) +  # Line plot for mean Cell.Counts
+  geom_point(size = 3, alpha = 0.5) +
+  geom_ribbon(aes(ymin = mean_Olig2 - se_Olig2, ymax = mean_Olig2 + se_Olig2, fill = Genotype), alpha = 0.2, color = NA) +  # Error ribbon for standard deviation
+  labs(
+    x = "Distance from Pia (% total cortical thickness)",
+    y = expression("cells / " ~ mm^2),
+    color = "Genotype",
+    fill = "Genotype"
+  ) +
+  theme_minimal()  +
+  scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  theme(legend.position = "bottom")  # Optional: Adjust legend position
+png(filename = "p30_Ctnnd2_lineplot_Olig2_counts_binned.png", width = 1200, height = 850, res = 300)
+  Olig2_binned_density_plot
+  dev.off()
+Olig2_binned_density_plot
+```
+
 
 ```{r}
 Bcas1_pos = lm(Bcas1_pos ~ bin * Genotype,

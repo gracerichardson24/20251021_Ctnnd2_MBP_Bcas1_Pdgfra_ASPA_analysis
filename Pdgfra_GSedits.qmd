@@ -723,7 +723,7 @@ Imageframe_data <- read.csv("imageframe_combined_detections_ASPAPdgra.csv")
 
 
 animal_frame_ASPAPdgfra$Genotype <- factor(animal_frame_ASPAPdgra$Genotype, levels = c("WT", "KO"))
-imageframe_combined_detections_ASPAPdgfra <- factor(imageframe_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
+imageframe_combined_detections_ASPAPdgfra$Genotype <- factor(imageframe_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
 
 
 summary_stats <- animal_frame_ASPAPdgra %>%
@@ -761,7 +761,7 @@ Imageframe_data <- read.csv("imageframe_combined_detections_ASPAPdgra.csv")
 
 
 animal_frame_ASPAPdgfra$Genotype <- factor(animal_frame_ASPAPdgra$Genotype, levels = c("WT", "KO"))
-imageframe_combined_detections_ASPAPdgfra <- factor(imageframe_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
+imageframe_combined_detections_ASPAPdgfra$Genotype <- factor(imageframe_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
 
 
 summary_stats <- animal_frame_ASPAPdgra %>%
@@ -798,7 +798,7 @@ Imageframe_data <- read.csv("imageframe_combined_detections_ASPAPdgra.csv")
 
 
 animal_frame_ASPAPdgfra$Genotype <- factor(animal_frame_ASPAPdgra$Genotype, levels = c("WT", "KO"))
-imageframe_combined_detections_ASPAPdgfra <- factor(imageframe_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
+imageframe_combined_detections_ASPAPdgfra$Genotype <- factor(imageframe_combined_detections_ASPAPdgra$Genotype, levels = c("WT", "KO"))
 
 
 summary_stats <- animal_frame_ASPAPdgra %>%
@@ -829,5 +829,6 @@ Olig2_plot <- ggplot(data = animal_frame_ASPAPdgfra, aes(x = Genotype, y = mean_
 
 ggsave("Olig2_density.png", plot = Olig2_plot,
        width = 2, height = 4, dpi = 300)
+Olig2_plot
 ```
 
