@@ -183,7 +183,7 @@ for (img in unique_images) {
     
     area_mm2 <- ((temp$Y_max[1] / 10) / 879.1) * (500 / 879.1)
     
-   Bcas1_count <- sum(temp$Bcas1 == "1")
+    Bcas1_count <- sum(temp$Bcas1 == "1")
     Bcas1_MBP_count <- sum(temp$Bcas1.MBP == "1")
     Olig2_count <- Bcas1_count + Bcas1_MBP_count  # sum of raw counts
     

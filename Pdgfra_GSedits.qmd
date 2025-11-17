@@ -666,9 +666,11 @@ ggplot(combined_detections_ASPA_Pdgfrabinned_counts_animal_summary, aes(x = bin,
   ) +
   theme_minimal()  +
   scale_colour_manual(values = c("dodgerblue", "firebrick1")) +
-  scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
+  scale_fill_manual(values = c("dodgerblue", "firebrick1"))
   theme(legend.position = "bottom")  # Optional: Adjust legend position
-png(filename = "p30_Ctnnd2_lineplot_P_neg_A_neg_counts_binned.png", width = 1200, height = 850, res = 300)
+
+png(filename = "p30_Ctnnd2_lineplot_P_neg_A_neg_counts_binned.png", width = 1200, height = 850, res = 300)  
+
   dev.off()
 P_neg_A_neg_binned_density_plot
 ```
