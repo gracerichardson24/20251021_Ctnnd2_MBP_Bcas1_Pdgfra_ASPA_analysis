@@ -3,8 +3,6 @@ title: "bcas1_mbp_analysis"
 format: html
 ---
 
-
-
 ```{r}
 #packages
 if(!require(lsmeans)){install.packages("lsmeans")}
@@ -27,6 +25,7 @@ if(!require(FSA)){install.packages("FSA")}
 if(!require(lattice)){install.packages("lattice")}
 if(!require(lsr)){install.packages("lsr")} 
 ```
+
 ```{r}
 
 #reading in csv files and cleaning
@@ -115,6 +114,7 @@ write.csv(imageframe_BCas1MBP, "imageframe_combined_detections_Bcas1MBP.csv", ro
 
 
 ```
+
 ```{r}
 animal_frame_BCas1MBP <- imageframe_BCas1MBP %>%
   group_by(Animal, Genotype) %>%
@@ -233,6 +233,7 @@ Olig2 = lm(Olig2 ~ bin * Genotype,
 summary(Olig2)
 Anova(Olig2, type = "II")
 ```
+
 ```{r}
 library(plotrix)
 #line plot for Bcas+ Counts
@@ -268,13 +269,13 @@ png(filename = "p30_Ctnnd2_lineplot_Olig2_counts_binned.png", width = 1200, heig
 Olig2_binned_density_plot
 ```
 
-
 ```{r}
 Bcas1_pos = lm(Bcas1_pos ~ bin * Genotype,
            data = combined_detections_BCas1MBPbinned_counts_animal)
 summary(Bcas1_pos)
 Anova(Bcas1_pos, type = "II")
 ```
+
 ```{r}
 library(plotrix)
 #line plot for Bcas+ Counts
@@ -309,12 +310,14 @@ png(filename = "p30_Ctnnd2_lineplot_Bcas1_pos_counts_binned.png", width = 1200, 
   dev.off()
 Bcas1_pos_binned_density_plot
 ```
+
 ```{r}
 Bcas1_pos_MBP_pos = lm(Bcas1_pos_MBP_pos ~ bin * Genotype,
            data = combined_detections_BCas1MBPbinned_counts_animal)
 summary(Bcas1_pos_MBP_pos)
 Anova(Bcas1_pos_MBP_pos, type = "II")
 ```
+
 ```{r}
 library(plotrix)
 #line plot for Bcas+ Counts
@@ -349,6 +352,7 @@ png(filename = "p30_Ctnnd2_lineplot_Bcas1_pos_MBP_pos_counts_binned.png", width 
   dev.off()
 Bcas1_pos_MBP_pos_binned_density_plot
 ```
+
 ```{r}
 Imageframe_data <- read.csv("imageframe_combined_detections_Bcas1MBP.csv")
 
@@ -387,6 +391,7 @@ ggsave("Olig2_Bcas1MBP_density.png", plot = Olig2_Bcas1MBP_plot,
        width = 2, height = 4, dpi = 300)
 Olig2_Bcas1MBP_plot
 ```
+
 ```{r}
 Imageframe_data <- read.csv("imageframe_combined_detections_Bcas1MBP.csv")
 
@@ -425,6 +430,7 @@ ggsave("Bcas1_Bcas1MBP_density.png", plot = Bcas1_Bcas1MBP_plot,
        width = 2, height = 4, dpi = 300)
 Bcas1_Bcas1MBP_plot
 ```
+
 ```{r}
 Imageframe_data <- read.csv("imageframe_combined_detections_Bcas1MBP.csv")
 
@@ -463,4 +469,3 @@ ggsave("Bcas1MBP_Bcas1MBP_density.png", plot = Bcas1MBP_Bcas1MBP_plot,
        width = 2, height = 4, dpi = 300)
 Bcas1MBP_Bcas1MBP_plot
 ```
-
