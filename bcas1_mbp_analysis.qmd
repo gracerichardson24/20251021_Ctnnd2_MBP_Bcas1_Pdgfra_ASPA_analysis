@@ -104,6 +104,8 @@ imageframe_BCas1MBP <- Detections_data_height %>%
     # calculate image area (in mm²) from your scaling constants
     Area = (max_value / 879.1) * (500 / 879.1),
     # convert to densities
+    total_Bcas1posMBPneg = total_Bcas1 - total_Bcas1MBP,
+    Bcas1posMBPneg_per_area = total_Bcas1posMBPneg / Area,
     Bcas1_per_area = total_Bcas1 / Area,
     Bcas1MBP_per_area = total_Bcas1MBP / Area,
     Olig2_per_area = Total_cells / Area
@@ -124,6 +126,7 @@ animal_frame_BCas1MBP <- imageframe_BCas1MBP %>%
     total_Olig2 = sum(Total_cells, na.rm = TRUE),
     total_Bcas1_count = sum(total_Bcas1, na.rm = TRUE),
     total_Bcas1MBP_count = sum(total_Bcas1MBP, na.rm = TRUE),
+    total_Bcas1posMBPneg_count = sum(total_Bcas1posMBPneg, na.rm = TRUE),
     # averages across images (for per-image statistics)
     mean_olig2 = mean(Total_cells, na.rm = TRUE),
     mean_olig2_per_area = mean(Olig2_per_area, na.rm = TRUE),
@@ -131,6 +134,8 @@ animal_frame_BCas1MBP <- imageframe_BCas1MBP %>%
     mean_Bcas1_per_area = mean(Bcas1_per_area, na.rm = TRUE),
     mean_BCas1MBP = mean(total_Bcas1MBP, na.rm = TRUE),
     mean_BCas1MBP_per_area = mean(Bcas1MBP_per_area, na.rm = TRUE),
+    mean_Bcas1posMBPneg = mean(total_Bcas1posMBPneg, na.rm = TRUE),
+    mean_Bcas1posMBPneg_per_area = mean(Bcas1posMBPneg_per_area, na.rm = TRUE),
     total_area = sum(Area, na.rm = TRUE),  # total area across all images
     .groups = "drop"
   ) %>%
@@ -138,7 +143,8 @@ animal_frame_BCas1MBP <- imageframe_BCas1MBP %>%
     # per-animal densities (weighted by total area)
     olig2_per_area = total_Olig2 / total_area,
     Bcas1_per_area = total_Bcas1_count / total_area,
-    Bcas1MBP_per_area = total_Bcas1MBP_count / total_area
+    Bcas1MBP_per_area = total_Bcas1MBP_count / total_area,
+    Bcas1posMBPneg_per_area = total_Bcas1posMBPneg_count / total_area
   )
 ```
 
@@ -236,7 +242,7 @@ Anova(Olig2, type = "II")
 
 ```{r}
 library(plotrix)
-#line plot for Bcas+ Counts
+#line plot for Bcas1+ Counts
 combined_detections_BCas1MBPbinned_counts_animal_summary <- combined_detections_BCas1MBPbinned_counts_animal %>%
   group_by(bin, Genotype) %>%
   summarise(

@@ -360,6 +360,8 @@ animal_frame_ASPAPdgfra <- imageframe_combined_detections_ASPAPdgra %>%
     total_Pdgfra_pos_ASPA_neg = sum(Pdgfra_pos_ASPA_neg, na.rm = TRUE),
     total_Pdgfra_neg_ASPA_pos = sum(Pdgfra_neg_ASPA_pos, na.rm = TRUE),
     total_Pdgfra_neg_ASPA_neg = sum(Pdgfra_neg_ASPA_neg, na.rm = TRUE),
+    prop_Pdgfra = total_Pdgfra / total_Olig2,
+    prop_ASPA = total_ASPA / total_Olig2,
     # averages across images (for per-image statistics)
     mean_olig2 = mean(Total_cells, na.rm = TRUE),
     mean_olig2_per_area = mean(Olig2_per_area, na.rm = TRUE),
@@ -931,4 +933,15 @@ wilcox.test(prop_Pdgfra ~ Genotype, data = df_prop, exact = TRUE)
 t.test(prop_Pdgfra ~ Genotype, data = df_prop)
 
 
+```
+
+```{r}
+wilcox.test(prop_Pdgfra ~ Genotype, data = animal_frame_ASPAPdgfra)
+```
+
+```{r}
+wilcox.test(prop_ASPA ~ Genotype, data = animal_frame_ASPAPdgfra)
+```
+
+```{r}
 ```
