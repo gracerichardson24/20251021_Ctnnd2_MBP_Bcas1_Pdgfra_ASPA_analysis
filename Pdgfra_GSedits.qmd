@@ -944,4 +944,70 @@ wilcox.test(prop_ASPA ~ Genotype, data = animal_frame_ASPAPdgfra)
 ```
 
 ```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+prop_plot_gt <- animal_frame_ASPAPdgfra %>%
+  group_by(Genotype) %>%
+  summarise(
+    ASPA = sum(total_ASPA, na.rm = TRUE),
+    Pdgfra = sum(total_Pdgfra, na.rm = TRUE)
+  ) %>%
+  mutate(
+    total = ASPA + Pdgfra,
+    prop_ASPA = ASPA / total,
+    prop_Pdgfra = Pdgfra / total
+  ) %>%
+  select(Genotype, prop_ASPA, prop_Pdgfra) %>%
+  pivot_longer(
+    cols = starts_with("prop_"),
+    names_to = "CellType",
+    values_to = "Proportion"
+  ) %>%
+  mutate(CellType = dplyr::recode(CellType,
+                                  prop_ASPA = "ASPA+",
+                                  prop_Pdgfra = "PDGFRα+")) %>%
+  ggplot(aes(x = Genotype, y = Proportion, fill = CellType)) +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  scale_fill_manual(values = c("#00FF00", "#FFA500")) +
+  scale_color_manual(values = c("#00FF00", "#FFA500")) +
+  labs(x = "", y = "Proportion", fill = "")
+
+ggsave("gt_propplot.png", plot = prop_plot_gt, width = 6, height = 4, dpi = 300)
+prop_plot_gt
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+prop_plot_animal <- animal_frame_ASPAPdgfra %>%
+  mutate(
+    total_AP = total_ASPA + total_Pdgfra,
+    prop_ASPA = total_ASPA / total_AP,
+    prop_Pdgfra = total_Pdgfra / total_AP
+  ) %>%
+  select(Animal, Genotype, prop_ASPA, prop_Pdgfra) %>%
+  pivot_longer(
+    cols = starts_with("prop_"),
+    names_to = "CellType",
+    values_to = "Proportion"
+  ) %>%
+  mutate(CellType = case_when(
+    CellType == "prop_ASPA" ~ "ASPA+",
+    CellType == "prop_Pdgfra" ~ "PDGFRα+"
+  )) %>%
+  ggplot(aes(x = Animal, y = Proportion, fill = CellType)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ Genotype, scales = "free_x") +
+  scale_fill_manual(values = c("ASPA+" = "#00FF00", "PDGFRα+" = "#FFA500")) +
+  theme_classic() +
+  labs(x = "Animal", y = "Proportion", fill = "") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("ani_propplot.png", plot = prop_plot_animal, width = 6, height = 4, dpi = 300)
+prop_plot_animal
 ```

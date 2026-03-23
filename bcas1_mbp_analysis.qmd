@@ -475,3 +475,88 @@ ggsave("Bcas1MBP_Bcas1MBP_density.png", plot = Bcas1MBP_Bcas1MBP_plot,
        width = 2, height = 4, dpi = 300)
 Bcas1MBP_Bcas1MBP_plot
 ```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+animal_frame_BCas1MBP_prop <- animal_frame_BCas1MBP |>
+  mutate(
+    prop_myelinating = total_Bcas1MBP_count / total_Olig2,
+    prop_unmyelinating = total_Bcas1posMBPneg_count / total_Olig2
+  )
+
+MBPprop_plot_gt <- animal_frame_BCas1MBP_prop %>%
+  group_by(Genotype) %>%
+  summarise(
+    Bcas1_MBPneg = sum(total_Bcas1posMBPneg_count, na.rm = TRUE),
+    Bcas1_MBPpos = sum(total_Bcas1MBP_count, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    total = Bcas1_MBPneg + Bcas1_MBPpos,
+    prop_Bcas1_MBPneg = Bcas1_MBPneg / total,
+    prop_Bcas1_MBPpos = Bcas1_MBPpos / total
+  ) %>%
+  select(Genotype, prop_Bcas1_MBPneg, prop_Bcas1_MBPpos) %>%
+  pivot_longer(
+    cols = starts_with("prop_"),
+    names_to = "CellType",
+    values_to = "Proportion"
+  ) %>%
+  mutate(
+    CellType = dplyr::recode(
+      CellType,
+      prop_Bcas1_MBPneg = "Bcas1+/MBP-",
+      prop_Bcas1_MBPpos = "Bcas1+/MBP+"
+    )
+  ) %>%
+  ggplot(aes(x = Genotype, y = Proportion, fill = CellType)) +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  scale_fill_manual(values = c("Bcas1+/MBP-" = "#00FFFF",
+                               "Bcas1+/MBP+" = "#FF0000")) +
+  labs(x = "", y = "Proportion", fill = "")
+
+ggsave("MBPgt_propplot.png", plot = MBPprop_plot_gt, width = 6, height = 4, dpi = 300)
+
+MBPprop_plot_gt
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+MBPprop_plot_animal <- animal_frame_BCas1MBP %>%
+  mutate(
+    total_BM = total_Bcas1posMBPneg_count + total_Bcas1MBP_count,
+    prop_Bcas1_MBPneg = total_Bcas1posMBPneg_count / total_BM,
+    prop_Bcas1_MBPpos = total_Bcas1MBP_count / total_BM
+  ) %>%
+  select(Animal, Genotype, prop_Bcas1_MBPneg, prop_Bcas1_MBPpos) %>%
+  pivot_longer(
+    cols = starts_with("prop_"),
+    names_to = "CellType",
+    values_to = "Proportion"
+  ) %>%
+  mutate(CellType = case_when(
+    CellType == "prop_Bcas1_MBPneg" ~ "Bcas1+/MBP-",
+    CellType == "prop_Bcas1_MBPpos" ~ "Bcas1+/MBP+"
+  )) %>%
+  ggplot(aes(x = Animal, y = Proportion, fill = CellType)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ Genotype, scales = "free_x") +
+  scale_fill_manual(values = c(
+    "Bcas1+/MBP-" = "#00FFFF",  # cyan
+    "Bcas1+/MBP+" = "#FF0000"   # red
+  )) +
+  theme_classic() +
+  labs(x = "Animal", y = "Proportion", fill = "") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("MBPani_propplot.png", plot = MBPprop_plot_animal, width = 6, height = 4, dpi = 300)
+
+MBPprop_plot_animal
+```
