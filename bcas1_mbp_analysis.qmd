@@ -388,7 +388,7 @@ Olig2_Bcas1MBP_plot <- ggplot(data = animal_frame_BCas1MBP, aes(x = Genotype, y 
   geom_jitter (data = imageframe_BCas1MBP, aes(color = Genotype, y = Olig2_per_area), width = 0.2, size = 2, alpha = 0.2) +
   theme_minimal() +
   xlab("") +
-  ylab("Mean Olig2+ Cells / "~ mm^2) +
+  ylab("Mean Bcas1+ Cells / "~ mm^2) +
   theme(legend.position = "none") +
   scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
   scale_color_manual(values = c("dodgerblue", "firebrick1"))
@@ -427,7 +427,7 @@ Bcas1_Bcas1MBP_plot <- ggplot(data = animal_frame_BCas1MBP, aes(x = Genotype, y 
   geom_jitter (data = imageframe_BCas1MBP, aes(color = Genotype, y = Bcas1_per_area), width = 0.2, size = 2, alpha = 0.2) +
   theme_minimal() +
   xlab("") +
-  ylab("Mean Bcas1+ Cells / "~ mm^2) +
+  ylab("Mean Bcas1+/MBP- Cells / "~ mm^2) +
   theme(legend.position = "none") +
   scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
   scale_color_manual(values = c("dodgerblue", "firebrick1"))
@@ -466,7 +466,7 @@ Bcas1MBP_Bcas1MBP_plot <- ggplot(data = animal_frame_BCas1MBP, aes(x = Genotype,
   geom_jitter (data = imageframe_BCas1MBP, aes(color = Genotype, y = Bcas1MBP_per_area), width = 0.2, size = 2, alpha = 0.2) +
   theme_minimal() +
   xlab("") +
-  ylab("Mean Bcas1+, MBP+ Cells / "~ mm^2) +
+  ylab("Mean Bcas1+/MBP+ Cells / "~ mm^2) +
   theme(legend.position = "none") +
   scale_fill_manual(values = c("dodgerblue", "firebrick1")) +
   scale_color_manual(values = c("dodgerblue", "firebrick1"))
@@ -506,20 +506,30 @@ MBPprop_plot_gt <- animal_frame_BCas1MBP_prop %>%
     values_to = "Proportion"
   ) %>%
   mutate(
-    CellType = dplyr::recode(
-      CellType,
-      prop_Bcas1_MBPneg = "Bcas1+/MBP-",
-      prop_Bcas1_MBPpos = "Bcas1+/MBP+"
-    )
+    CellType = case_when(
+      CellType == "prop_Bcas1_MBPneg" ~ "Bcas1+/MBP-",
+      CellType == "prop_Bcas1_MBPpos" ~ "Bcas1+/MBP+"
+    ),
+    CellType = factor(CellType, levels = c("Bcas1+/MBP-", "Bcas1+/MBP+"))
   ) %>%
   ggplot(aes(x = Genotype, y = Proportion, fill = CellType)) +
-  geom_bar(stat = "identity") +
+  geom_col(width = 0.6, show.legend = FALSE) +
+  facet_wrap(~ CellType, nrow = 1) +
+  scale_fill_manual(values = c(
+    "Bcas1+/MBP-" = "#00FFFF",
+    "Bcas1+/MBP+" = "#FF0000"
+  )) +
   theme_classic() +
-  scale_fill_manual(values = c("Bcas1+/MBP-" = "#00FFFF",
-                               "Bcas1+/MBP+" = "#FF0000")) +
-  labs(x = "", y = "Proportion", fill = "")
+  labs(x = "", y = "Proportion") +
+  coord_cartesian(ylim = c(0, 1))
 
-ggsave("MBPgt_propplot.png", plot = MBPprop_plot_gt, width = 6, height = 4, dpi = 300)
+ggsave(
+  "MBPgt_propplot_faceted.png",
+  plot = MBPprop_plot_gt,
+  width = 6,
+  height = 3,
+  dpi = 300
+)
 
 MBPprop_plot_gt
 ```
@@ -541,22 +551,74 @@ MBPprop_plot_animal <- animal_frame_BCas1MBP %>%
     names_to = "CellType",
     values_to = "Proportion"
   ) %>%
-  mutate(CellType = case_when(
-    CellType == "prop_Bcas1_MBPneg" ~ "Bcas1+/MBP-",
-    CellType == "prop_Bcas1_MBPpos" ~ "Bcas1+/MBP+"
-  )) %>%
+  mutate(
+    CellType = case_when(
+      CellType == "prop_Bcas1_MBPneg" ~ "Bcas1+/MBP-",
+      CellType == "prop_Bcas1_MBPpos" ~ "Bcas1+/MBP+"
+    ),
+    CellType = factor(CellType, levels = c("Bcas1+/MBP-", "Bcas1+/MBP+"))
+  ) %>%
   ggplot(aes(x = Animal, y = Proportion, fill = CellType)) +
-  geom_bar(stat = "identity") +
-  facet_wrap(~ Genotype, scales = "free_x") +
+  geom_col(show.legend = FALSE) +
+  facet_grid(CellType ~ Genotype, scales = "free_x", switch = "y") +
   scale_fill_manual(values = c(
-    "Bcas1+/MBP-" = "#00FFFF",  # cyan
-    "Bcas1+/MBP+" = "#FF0000"   # red
+    "Bcas1+/MBP-" = "#00FFFF",
+    "Bcas1+/MBP+" = "#FF0000"
   )) +
   theme_classic() +
-  labs(x = "Animal", y = "Proportion", fill = "") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  labs(x = "Animal", y = "Proportion") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  coord_cartesian(ylim = c(0, 1))
 
-ggsave("MBPani_propplot.png", plot = MBPprop_plot_animal, width = 6, height = 4, dpi = 300)
+ggsave(
+  "MBPani_propplot_grid.png",
+  plot = MBPprop_plot_animal,
+  width = 6,
+  height = 4,
+  dpi = 300
+)
 
 MBPprop_plot_animal
+```
+
+```{r}
+animal_frame_BCas1MBP <- animal_frame_BCas1MBP |>
+  mutate(
+    propBcas1posMBPpos = total_Bcas1MBP_count /total_Bcas1_count,
+    propBcas1posMBPneg = total_Bcas1posMBPneg_count / total_Bcas1_count
+  )
+wilcox.test(propBcas1posMBPpos ~ Genotype, data = animal_frame_BCas1MBP)
+wilcox.test(propBcas1posMBPneg ~ Genotype, data = animal_frame_BCas1MBP)
+```
+
+```{r}
+agg5 <- animal_frame_BCas1MBP %>%
+  group_by(Genotype) %>%
+  summarise(
+    count = sum(total_Bcas1MBP_count),
+    total = sum(total_Bcas1_count),
+    .groups = "drop"
+  ) %>%
+  mutate(other = total - count)
+
+mat5 <- as.matrix(agg5[, c("count", "other")])
+rownames(mat5) <- agg5$Genotype
+
+chisq.test(mat5)
+
+agg6 <- animal_frame_BCas1MBP %>%
+  group_by(Genotype) %>%
+  summarise(
+    count = sum(total_Bcas1posMBPneg_count),
+    total = sum(total_Bcas1_count),
+    .groups = "drop"
+  ) %>%
+  mutate(other = total - count)
+
+mat6 <- as.matrix(agg6[, c("count", "other")])
+rownames(mat6) <- agg6$Genotype
+
+chisq.test(mat6)
 ```

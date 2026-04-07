@@ -339,11 +339,8 @@ imageframe_combined_detections_ASPAPdgfra <- combined_detections_ASPAPdgra %>%
 write.csv(imageframe_combined_detections_ASPAPdgra, "imageframe_combined_detections_ASPAPdgra.csv", row.names = FALSE)
 
 # Remove any images with all zeros if desired
-imageframe_combined_detections_ASPAPdgra <- imageframe_combined_detections_ASPAPdgra %>%
-  filter(!(Pdgfra_pos_ASPA_pos == 0 &
-           Pdgfra_pos_ASPA_neg == 0 &
-           Pdgfra_neg_ASPA_pos == 0 &
-           Pdgfra_neg_ASPA_neg == 0))
+# Remove any images with all zeros if desired 
+imageframe_combined_detections_ASPAPdgra <- imageframe_combined_detections_ASPAPdgra %>% filter(!(Pdgfra_pos_ASPA_pos == 0 & Pdgfra_pos_ASPA_neg == 0 & Pdgfra_neg_ASPA_pos == 0 & Pdgfra_neg_ASPA_neg == 0))
 
 ```
 
@@ -826,9 +823,14 @@ ASPA_plot
 
 ```{r}
 
-animal_frame_ASPAPdgfra$Genotype <- factor(animal_frame_ASPAPdgra$Genotype, levels = c("WT", "KO"))
-animal_frame_ASPAPdgfra$Genotype <- factor(animal_frame_ASPAPdgfra$Genotype, levels = c("WT", "KO"))
-imageframe_combined_detections_ASPAPdgfra$Genotype <- factor(imageframe_combined_detections_ASPAPdgfra$Genotype, levels = c("WT", "KO"))
+animal_frame_ASPAPdgfra <- animal_frame_ASPAPdgfra %>%
+  mutate(Genotype = factor(Genotype, levels = c("WT", "KO")))
+
+animal_frame_ASPAPdgra <- animal_frame_ASPAPdgra %>%
+  mutate(Genotype = factor(Genotype, levels = c("WT", "KO")))
+
+imageframe_combined_detections_ASPAPdgfra <- imageframe_combined_detections_ASPAPdgfra %>%
+  mutate(Genotype = factor(Genotype, levels = c("WT", "KO")))
 
 
 
@@ -951,6 +953,7 @@ wilcox.test(propPdgfrapos_ASPAneg ~ Genotype, data = animal_frame_ASPAPdgfra)
 wilcox.test(propPdgfraneg_ASPApos ~ Genotype, data = animal_frame_ASPAPdgfra)
 wilcox.test(propPdgfra_neg_ASPAneg ~ Genotype, data = animal_frame_ASPAPdgfra)
 ```
+
 ```{r}
 agg <- animal_frame_ASPAPdgfra %>%
   group_by(Genotype) %>%
@@ -1015,6 +1018,11 @@ library(tidyr)
 library(ggplot2)
 library(scales)
 
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+
 prop_plot_gt <- animal_frame_ASPAPdgfra %>%
   group_by(Genotype) %>%
   summarise(
@@ -1036,32 +1044,35 @@ prop_plot_gt <- animal_frame_ASPAPdgfra %>%
     values_to = "Proportion"
   ) %>%
   mutate(
-    CellType = dplyr::recode(
-      CellType,
-      prop_ASPA = "ASPA+",
-      prop_Pdgfra = "PDGFRα+",
-      prop_Other = "Other Olig2+"
+    CellType = case_when(
+      CellType == "prop_ASPA" ~ "ASPA+",
+      CellType == "prop_Pdgfra" ~ "PDGFRα+",
+      CellType == "prop_Other" ~ "Other Olig2+"
     ),
-    CellType = factor(CellType,
-                      levels = c("ASPA+", "PDGFRα+", "Other Olig2+"))
+    CellType = factor(
+      CellType,
+      levels = c("ASPA+", "PDGFRα+", "Other Olig2+")
+    )
   ) %>%
   ggplot(aes(x = Genotype, y = Proportion, fill = CellType)) +
-  geom_col(width = 0.6) +
+  geom_col(width = 0.6, show.legend = FALSE) +
+  facet_wrap(~ CellType, nrow = 1) +
   scale_fill_manual(values = c(
     "ASPA+" = "#00FF00",
     "PDGFRα+" = "#FFA500",
     "Other Olig2+" = "grey70"
   )) +
-  labs(x = "", y = "Proportion", fill = "") +
+  labs(x = "", y = "Proportion") +
   theme_classic() +
-  theme(legend.position = "bottom") +
   coord_cartesian(ylim = c(0, 1))
 
-ggsave("gt_propplot_olig2.png",
-       plot = prop_plot_gt,
-       width = 6,
-       height = 4,
-       dpi = 300)
+ggsave(
+  "gt_propplot_olig2_faceted.png",
+  plot = prop_plot_gt,
+  width = 6,
+  height = 3,
+  dpi = 300
+)
 
 prop_plot_gt
 ```
@@ -1090,27 +1101,122 @@ prop_plot_animal <- animal_frame_ASPAPdgfra %>%
       CellType == "prop_Pdgfra" ~ "PDGFRα+",
       CellType == "prop_Other" ~ "Other Olig2+"
     ),
-    CellType = factor(CellType,
-                      levels = c("ASPA+", "PDGFRα+", "Other Olig2+"))
+    CellType = factor(
+      CellType,
+      levels = c("ASPA+", "PDGFRα+", "Other Olig2+")
+    )
   ) %>%
   ggplot(aes(x = Animal, y = Proportion, fill = CellType)) +
-  geom_col() +
-  facet_wrap(~ Genotype, scales = "free_x") +
+  geom_col(show.legend = FALSE) +
+  facet_grid(CellType ~ Genotype, scales = "free_x", switch = "y") +
   scale_fill_manual(values = c(
     "ASPA+" = "#00FF00",
     "PDGFRα+" = "#FFA500",
     "Other Olig2+" = "grey70"
   )) +
-  labs(x = "Animal", y = "Proportion of Olig2+ cells", fill = "") +
+  labs(
+    x = "Animal",
+    y = "Proportion of Olig2+ cells"
+  ) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
   coord_cartesian(ylim = c(0, 1))
 
-ggsave("ani_propplot_olig2.png",
-       plot = prop_plot_animal,
-       width = 6,
-       height = 4,
-       dpi = 300)
+ggsave(
+  "ani_propplot_olig2_faceted.png",
+  plot = prop_plot_animal,
+  width = 9,
+  height = 4,
+  dpi = 300
+)
 
 prop_plot_animal
+```
+
+```{r}
+# Ensure Genotype is a factor with defined levels in both datasets
+library(dplyr)
+library(ggplot2)
+
+# Set Genotype as an ordered factor
+animal_frame_ASPAPdgfra <- animal_frame_ASPAPdgfra %>%
+  mutate(Genotype = factor(trimws(Genotype), levels = c("WT", "KO")))
+
+imageframe_combined_detections_ASPAPdgfra <- imageframe_combined_detections_ASPAPdgfra %>%
+  mutate(Genotype = factor(trimws(Genotype), levels = c("WT", "KO")))
+
+# Remove rows with zero values for this measure
+animal_frame_ASPAPdgfra_filtered <- animal_frame_ASPAPdgfra %>%
+  filter(mean_Pdgfra_neg_ASPA_neg_per_area != 0)
+
+imageframe_combined_detections_ASPAPdgfra_filtered <- imageframe_combined_detections_ASPAPdgfra %>%
+  filter(Pdgfra_neg_ASPA_neg_per_area != 0)
+
+# Define colors
+my_colors <- c(
+  "WT" = "dodgerblue",
+  "KO" = "firebrick1"
+)
+
+# Compute group mean and SEM after filtering out zeros
+summary_stats <- animal_frame_ASPAPdgfra_filtered %>%
+  group_by(Genotype) %>%
+  summarise(
+    MeanCount = mean(mean_Pdgfra_neg_ASPA_neg_per_area, na.rm = TRUE),
+    SEM = sd(mean_Pdgfra_neg_ASPA_neg_per_area, na.rm = TRUE) /
+      sqrt(sum(!is.na(mean_Pdgfra_neg_ASPA_neg_per_area))),
+    .groups = "drop"
+  )
+
+# Create plot
+Doubleneg_plot <- ggplot(
+  data = animal_frame_ASPAPdgfra_filtered,
+  aes(x = Genotype, y = mean_Pdgfra_neg_ASPA_neg_per_area)
+) +
+  geom_col(
+    data = summary_stats,
+    aes(x = Genotype, y = MeanCount, fill = Genotype),
+    alpha = 0.4,
+    inherit.aes = FALSE
+  ) +
+  geom_errorbar(
+    data = summary_stats,
+    aes(x = Genotype, ymin = MeanCount - SEM, ymax = MeanCount + SEM),
+    width = 0.2,
+    color = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_jitter(
+    aes(color = Genotype),
+    width = 0.2,
+    size = 2,
+    alpha = 0.9
+  ) +
+  geom_jitter(
+    data = imageframe_combined_detections_ASPAPdgfra_filtered,
+    aes(x = Genotype, y = Pdgfra_neg_ASPA_neg_per_area, color = Genotype),
+    width = 0.2,
+    size = 2,
+    alpha = 0.2,
+    inherit.aes = FALSE
+  ) +
+  theme_minimal() +
+  xlab("") +
+  ylab(expression("Mean Double- Cells / " * mm^2)) +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = my_colors) +
+  scale_color_manual(values = my_colors)
+
+# Save and display
+ggsave(
+  "Doubleneg_density.png",
+  plot = Doubleneg_plot,
+  width = 2,
+  height = 4,
+  dpi = 300
+)
+
+Doubleneg_plot
 ```
